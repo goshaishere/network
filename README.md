@@ -4,7 +4,7 @@
 
 **Стек:** Django 6 · DRF · PostgreSQL 18 · Quasar 2 · Vue 3 · Vite · TypeScript · Docker.
 
-Документация по архитектуре, датафлоу, БД, Docker и CI/CD — в каталоге **[docs/](docs/README.md)**.
+Документация по архитектуре, датафлоу, БД, Docker и CI/CD — в каталоге **[docs/](docs/README.md)**. Сводка **док ↔ код** по фазам: **[docs/IMPLEMENTATION-STATUS.md](docs/IMPLEMENTATION-STATUS.md)**.
 
 ## Быстрый старт (фаза 1)
 
