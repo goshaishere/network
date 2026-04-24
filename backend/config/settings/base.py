@@ -33,8 +33,19 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "channels",
+    "apps.accounts.apps.AccountsConfig",
+    "apps.profiles.apps.ProfilesConfig",
+    "apps.walls.apps.WallsConfig",
+    "apps.communities.apps.CommunitiesConfig",
+    "apps.messaging.apps.MessagingConfig",
+    "apps.media.apps.MediaConfig",
+    "apps.work.apps.WorkConfig",
+    "apps.console.apps.ConsoleConfig",
     "apps.common.apps.CommonConfig",
 ]
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -82,6 +93,10 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+AUTH_USER_MODEL = "accounts.User"
+
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:9000")
+
 # --- DRF / JWT ---
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -89,6 +104,14 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "120/hour",
+        "user": "2000/day",
+    },
 }
 
 SIMPLE_JWT = {

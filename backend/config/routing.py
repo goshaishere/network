@@ -1,3 +1,5 @@
-"""WebSocket маршруты (Channels). Пока пусто — фаза 4."""
+"""WebSocket (Channels)."""
 
-websocket_urlpatterns: list = []
+from apps.messaging.routing import websocket_urlpatterns as messaging_ws
+
+websocket_urlpatterns = list(messaging_ws)

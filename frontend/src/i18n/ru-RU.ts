@@ -1,5 +1,9 @@
 export default {
   appTitle: "Network",
+  common: {
+    stubBody: "Раздел в разработке — API и UI появятся в следующих итерациях.",
+    unknown: "Страница",
+  },
   home: {
     welcome: "Добро пожаловать в Network",
     blurb:
@@ -7,10 +11,70 @@ export default {
     apiCheck: "Проверка API",
     healthBtn: "GET /api/v1/health/",
   },
-  nav: { home: "Главная", dashboard: "Дашборд" },
+  nav: {
+    home: "Главная",
+    dashboard: "Дашборд",
+    communities: "Сообщества",
+    messages: "Сообщения",
+    work: "Работа",
+    console: "Консоль",
+    settings: "Настройки",
+    profile: "Профиль",
+    signIn: "Вход",
+    signUp: "Регистрация",
+    signOut: "Выход",
+  },
   dashboard: {
     stubTitle: "Дашборд",
-    stubBody: "Заглушка маршрута — виджеты и сетка появятся на следующих этапах.",
+    stubBody: "Виджеты и сетка — позже.",
+  },
+  communities: {
+    stubTitle: "Сообщества",
+    detailTitle: "Сообщество",
+    stubBody: "Списки, карточки и посты — позже.",
+  },
+  messages: {
+    stubTitle: "Диалоги",
+    chatTitle: "Переписка",
+    stubBody: "ЛС и WebSocket — позже.",
+  },
+  work: {
+    stubTitle: "Рабочий контур",
+    stubBody: "Группы и задачи — позже.",
+  },
+  console: {
+    stubTitle: "Админ-консоль",
+    stubBody: "Управление пользователями и ролями — позже.",
+  },
+  settings: {
+    profileTitle: "Профиль и аккаунт",
+    stubBody: "Редактирование профиля — позже.",
+  },
+  profile: {
+    stubTitle: "Профиль пользователя",
+    stubBody: "Стена и данные — позже.",
+  },
+  auth: {
+    signInTitle: "Вход",
+    signUpTitle: "Регистрация",
+    resetRequestTitle: "Сброс пароля",
+    resetConfirmTitle: "Новый пароль",
+    email: "Email",
+    password: "Пароль",
+    passwordConfirm: "Пароль ещё раз",
+    displayName: "Имя (необязательно)",
+    newPassword: "Новый пароль",
+    signIn: "Войти",
+    signUp: "Зарегистрироваться",
+    toRegister: "Создать аккаунт",
+    haveAccount: "Уже есть аккаунт? Войти",
+    forgotPassword: "Забыли пароль?",
+    backHome: "На главную",
+    sendResetLink: "Отправить ссылку",
+    resetEmailSent: "Если такой email есть, мы отправили письмо со ссылкой.",
+    savePassword: "Сохранить пароль",
+    backToLogin: "Ко входу",
+    invalidResetLink: "Ссылка недействительна или устарела. Запросите сброс ещё раз.",
   },
   notFound: { title: "Страница не найдена", back: "На главную" },
 };

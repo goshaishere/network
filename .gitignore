@@ -5,6 +5,7 @@ __pycache__/
 .ruff_cache/
 *.sqlite3
 backend/staticfiles/
+backend/media/
 backend/.venv/
 venv/
 

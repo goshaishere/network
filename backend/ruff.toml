@@ -8,3 +8,4 @@ ignore = []
 
 [lint.per-file-ignores]
 "config/settings/*.py" = ["F405", "F403"]
+"**/migrations/*.py" = ["E501"]
