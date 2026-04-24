@@ -1,6 +1,6 @@
 import { createApp } from "vue";
 import axios from "axios";
-import { Dark, Quasar } from "quasar";
+import { Dark, Dialog, Quasar } from "quasar";
 import quasarLang from "quasar/lang/ru";
 import { createPinia } from "pinia";
 import "@quasar/extras/material-icons/material-icons.css";
@@ -22,7 +22,7 @@ const app = createApp(App);
 const pinia = createPinia();
 app.use(pinia);
 app.use(Quasar, {
-  plugins: { Dark },
+  plugins: { Dark, Dialog },
   lang: quasarLang,
 });
 app.use(i18n);

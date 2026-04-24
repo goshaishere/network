@@ -14,8 +14,8 @@
 | 0 | Документация | **Готово** | Чеклисты в пайплайне `[x]` соответствуют наличию `docs/`. |
 | 1 | Каркас репо | **Готово** | Django split settings, DRF, JWT, CORS, ASGI+Channels+Redis, Quasar+Vite+TS+i18n+тема, compose, CI. |
 | 2 | Auth и вход | **Готово** | JWT, blacklist, `me`, сброс пароля; hCaptcha после N ошибок (`captcha_required`), кэш счётчика, `ScopedRateThrottle` на login и сброс пароля; фронт передаёт `captcha_token`, виджет hCaptcha. |
-| 3 | Профиль, стена, `/`, дашборд | **Частично** | API: `profiles/me`, `me/dashboard`, стена `walls/*`, публичный профиль. **Нет** UI: виджеты, pin, режим правки, «лёгкая главная»/feed по критерию фазы. |
-| 4 | ЛС MVP | **Частично** | REST + WS на бэке, broadcast после POST. **Нет** клиента WS и полноценного UI диалога (критерий «без ручного обновления»). |
+| 3 | Профиль, стена, `/`, дашборд | **Готово** | Лёгкая главная `/` (превью стены и диалогов, быстрые ссылки), `/dashboard` с виджетами и PATCH layout, профиль/стена, настройки `profiles/me`. Drag-and-drop сетка и расширенный каталог виджетов по ролям — позже (см. ROLES §5.2). |
+| 4 | ЛС MVP | **Готово** | REST + WS; фронт: `MessagesListPage`, `ConversationPage`, `useMessagingSocket` (JWT в query, subscribe), Vite proxy `/ws`, входящие без F5; `other_display_name` в списке диалогов. |
 | 5 | Сообщества | **Частично** | Бэк `communities` (создание, join, посты, открытое/закрытое). Фронт — заглушки; **нет** политики «`/work` недоступен обычному user» как в фазе 5. |
 | 6 | Прод + наблюдаемость | **Не начато** | Нет prod-деплоя, бэкапов, Sentry/Prometheus по критерию. |
 | 7 | Штат / партнёр | **Не начато** | Нет `EmploymentKind`, `/api/v1/internal/...`, скрытия пунктов для partner. |
@@ -42,12 +42,13 @@
 ### Фаза 3
 
 - **Сделано (API):** `apps.profiles`, `apps.walls`; эндпоинты из [BACKEND.md](./BACKEND.md) для профиля, стены, `profiles/me/dashboard/`.
-- **Не сделано (UI + продукт):** главная и `/dashboard` по [ROLES-AND-TASKS.md §5](./ROLES-AND-TASKS.md); критерий «собрать дашборд и перезайти».
+- **Сделано (UI):** «лёгкая главная» [ROLES §5.1](./ROLES-AND-TASKS.md): превью стены и диалогов, ссылки на сообщества/сообщения/дашборд; `DashboardPage`, `UserProfilePage`, `SettingsProfilePage`, `author_display_name` на стене.
+- **Позже (§5.2):** drag-and-drop сетка, каталог виджетов по ролям, `useDashboardLayout` как отдельный composable.
 
 ### Фаза 4
 
-- **Сделано (бэк):** `apps.messaging`, `ws/messaging/`, публикация в группу после создания сообщения.
-- **Не сделано:** фронт realtime, E2E «диалог без F5».
+- **Сделано (бэк):** `apps.messaging`, `ws/messaging/?token=`, `MessagingConsumer`, `broadcast_new_message` в группу `conversation_{id}`.
+- **Сделано (фронт):** `src/composables/useMessagingSocket.ts`, `MessagesListPage.vue`, `ConversationPage.vue` (REST + подписка WS, дедуп по `id`), прокси `vite.config.ts` → `/ws`; кнопка «Написать» с профиля; в списке диалогов — `other_display_name`. Прод: задать `VITE_WS_URL` или проксировать WSS до ASGI.
 
 ### Фаза 5
 
@@ -66,8 +67,8 @@
 
 ## Следующий приоритет (рекомендация)
 
-1. **Фаза 3 на фронте:** стена + сохранение раскладки дашборда с уже существующим API.  
-2. **Фаза 4 на фронте:** `useMessagingSocket` + экран диалога.  
-3. **Фаза 5:** UI сообществ + guards **`employee`** для `/work` и API задач (подготовка к фазе 8).
+1. **Фаза 5:** UI сообществ + guards **`employee`** для `/work` и API задач (подготовка к фазе 8).  
+2. **Улучшения фазы 3:** `useDashboardLayout`, DnD-сетка, виджеты по ролям.  
+3. **Улучшения фазы 4:** переподключение WS при refresh токена, индикатор «печатает…», доставка офлайн.
 
 Порядок можно менять по продукту; этот файл — только фиксация **факта**, не планирование.

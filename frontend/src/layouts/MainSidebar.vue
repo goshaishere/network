@@ -77,14 +77,24 @@ const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 
-const mainLinks = computed(() => [
-  { to: "/", icon: "home", labelKey: "nav.home", exact: true },
-  { to: "/dashboard", icon: "dashboard", labelKey: "nav.dashboard", exact: false },
-  { to: "/communities", icon: "groups", labelKey: "nav.communities", exact: false },
-  { to: "/messages", icon: "chat", labelKey: "nav.messages", exact: false },
-  { to: "/work", icon: "work", labelKey: "nav.work", exact: false },
-  { to: "/profile/1", icon: "person", labelKey: "nav.profile", exact: false },
-]);
+const mainLinks = computed(() => {
+  const links = [
+    { to: "/", icon: "home", labelKey: "nav.home", exact: true },
+    { to: "/dashboard", icon: "dashboard", labelKey: "nav.dashboard", exact: false },
+    { to: "/communities", icon: "groups", labelKey: "nav.communities", exact: false },
+    { to: "/messages", icon: "chat", labelKey: "nav.messages", exact: false },
+    { to: "/work", icon: "work", labelKey: "nav.work", exact: false },
+  ];
+  if (auth.isAuthenticated && auth.user) {
+    links.push({
+      to: `/profile/${auth.user.id}`,
+      icon: "person",
+      labelKey: "nav.profile",
+      exact: false,
+    });
+  }
+  return links;
+});
 
 watch(
   () => route.fullPath,

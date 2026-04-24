@@ -10,12 +10,8 @@ const mainChildren: RouteRecordRaw[] = [
   {
     path: "dashboard",
     name: "dashboard",
-    component: () => import("@/pages/PlaceholderPage.vue"),
-    meta: {
-      titleKey: "dashboard.stubTitle",
-      stubBodyKey: "dashboard.stubBody",
-      requiresAuth: true,
-    },
+    component: () => import("@/pages/DashboardPage.vue"),
+    meta: { titleKey: "dashboard.title", requiresAuth: true },
   },
   {
     path: "communities",
@@ -38,22 +34,14 @@ const mainChildren: RouteRecordRaw[] = [
   {
     path: "messages",
     name: "messages",
-    component: () => import("@/pages/PlaceholderPage.vue"),
-    meta: {
-      titleKey: "messages.stubTitle",
-      stubBodyKey: "messages.stubBody",
-      requiresAuth: true,
-    },
+    component: () => import("@/pages/MessagesListPage.vue"),
+    meta: { titleKey: "messages.listTitle", requiresAuth: true },
   },
   {
     path: "messages/:id",
     name: "conversation",
-    component: () => import("@/pages/PlaceholderPage.vue"),
-    meta: {
-      titleKey: "messages.chatTitle",
-      stubBodyKey: "messages.stubBody",
-      requiresAuth: true,
-    },
+    component: () => import("@/pages/ConversationPage.vue"),
+    meta: { titleKey: "messages.chatTitle", requiresAuth: true },
   },
   {
     path: "work",
@@ -79,21 +67,14 @@ const mainChildren: RouteRecordRaw[] = [
   {
     path: "settings/profile",
     name: "settings-profile",
-    component: () => import("@/pages/PlaceholderPage.vue"),
-    meta: {
-      titleKey: "settings.profileTitle",
-      stubBodyKey: "settings.stubBody",
-      requiresAuth: true,
-    },
+    component: () => import("@/pages/SettingsProfilePage.vue"),
+    meta: { titleKey: "settings.profileTitle", requiresAuth: true },
   },
   {
     path: "profile/:id",
     name: "user-profile",
-    component: () => import("@/pages/PlaceholderPage.vue"),
-    meta: {
-      titleKey: "profile.stubTitle",
-      stubBodyKey: "profile.stubBody",
-    },
+    component: () => import("@/pages/UserProfilePage.vue"),
+    meta: { titleKey: "profile.pageTitle" },
   },
 ];
 
