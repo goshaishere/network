@@ -97,6 +97,17 @@ AUTH_USER_MODEL = "accounts.User"
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:9000")
 
+HCAPTCHA_SECRET_KEY = os.environ.get("HCAPTCHA_SECRET_KEY", "").strip()
+HCAPTCHA_SKIP = os.environ.get("HCAPTCHA_SKIP", "false").lower() in ("1", "true", "yes")
+LOGIN_CAPTCHA_THRESHOLD = int(os.environ.get("LOGIN_CAPTCHA_THRESHOLD", "3"))
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "network-cache",
+    }
+}
+
 # --- DRF / JWT ---
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -105,12 +116,16 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
     "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.ScopedRateThrottle",
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ),
     "DEFAULT_THROTTLE_RATES": {
         "anon": "120/hour",
         "user": "2000/day",
+        "login": "60/minute",
+        "password_reset": "10/hour",
+        "password_reset_confirm": "30/hour",
     },
 }
 

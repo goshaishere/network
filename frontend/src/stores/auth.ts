@@ -77,11 +77,12 @@ export const useAuthStore = defineStore("auth", () => {
     setSession(data.access, data.refresh, data.user);
   }
 
-  async function login(email: string, password: string) {
-    const { data } = await api.post<{ access: string; refresh: string }>("/auth/login/", {
-      email,
-      password,
-    });
+  async function login(email: string, password: string, captchaToken?: string | null) {
+    const body: Record<string, string> = { email, password };
+    if (captchaToken) {
+      body.captcha_token = captchaToken;
+    }
+    const { data } = await api.post<{ access: string; refresh: string }>("/auth/login/", body);
     accessToken.value = data.access;
     refreshToken.value = data.refresh;
     localStorage.setItem(LS_ACCESS, data.access);

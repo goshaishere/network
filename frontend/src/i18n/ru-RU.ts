@@ -75,6 +75,10 @@ export default {
     savePassword: "Сохранить пароль",
     backToLogin: "Ко входу",
     invalidResetLink: "Ссылка недействительна или устарела. Запросите сброс ещё раз.",
+    captchaHint: "Подтвердите, что вы не робот, и снова нажмите «Войти».",
+    captchaSolveFirst: "Сначала пройдите проверку hCaptcha.",
+    captchaMissingSitekey: "Сервер запросил капчу, но не задан VITE_HCAPTCHA_SITEKEY — добавьте ключ в .env для локальной разработки.",
+    signInFailed: "Не удалось войти. Проверьте email и пароль.",
   },
   notFound: { title: "Страница не найдена", back: "На главную" },
 };

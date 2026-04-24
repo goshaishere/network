@@ -74,6 +74,11 @@ export default {
     savePassword: "Save password",
     backToLogin: "Back to sign in",
     invalidResetLink: "This link is invalid or expired. Request a new reset.",
+    captchaHint: "Complete the hCaptcha check, then press Sign in again.",
+    captchaSolveFirst: "Please complete the hCaptcha challenge first.",
+    captchaMissingSitekey:
+      "The server asked for a captcha, but VITE_HCAPTCHA_SITEKEY is not set — add it to your .env for local dev.",
+    signInFailed: "Sign in failed. Check your email and password.",
   },
   notFound: { title: "Page not found", back: "Home" },
 };

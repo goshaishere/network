@@ -13,7 +13,7 @@
 |------|--------|--------|------------|
 | 0 | Документация | **Готово** | Чеклисты в пайплайне `[x]` соответствуют наличию `docs/`. |
 | 1 | Каркас репо | **Готово** | Django split settings, DRF, JWT, CORS, ASGI+Channels+Redis, Quasar+Vite+TS+i18n+тема, compose, CI. |
-| 2 | Auth и вход | **Частично** | JWT, blacklist, `me`, сброс пароля, throttle DRF, UI auth; **нет** hCaptcha после N ошибок и отдельных лимитов login/reset по доке. |
+| 2 | Auth и вход | **Готово** | JWT, blacklist, `me`, сброс пароля; hCaptcha после N ошибок (`captcha_required`), кэш счётчика, `ScopedRateThrottle` на login и сброс пароля; фронт передаёт `captcha_token`, виджет hCaptcha. |
 | 3 | Профиль, стена, `/`, дашборд | **Частично** | API: `profiles/me`, `me/dashboard`, стена `walls/*`, публичный профиль. **Нет** UI: виджеты, pin, режим правки, «лёгкая главная»/feed по критерию фазы. |
 | 4 | ЛС MVP | **Частично** | REST + WS на бэке, broadcast после POST. **Нет** клиента WS и полноценного UI диалога (критерий «без ручного обновления»). |
 | 5 | Сообщества | **Частично** | Бэк `communities` (создание, join, посты, открытое/закрытое). Фронт — заглушки; **нет** политики «`/work` недоступен обычному user» как в фазе 5. |
@@ -36,8 +36,8 @@
 
 ### Фаза 2
 
-- **Сделано:** `apps.accounts` — register/login/refresh/logout/me/password reset; DRF throttle defaults; фронт — страницы `/auth/*`.
-- **Не сделано:** hCaptcha, счётчик неудачных входов → `captcha_required`, узкие throttles на login/reset.
+- **Сделано:** `apps.accounts` — register/login/refresh/logout/me/password reset; кэш и порог `LOGIN_CAPTCHA_THRESHOLD`, `verify_hcaptcha_response`, ответ `CaptchaRequired` (`code: captcha_required`); `ScopedRateThrottle` для `login`, `password_reset`, `password_reset_confirm`; фронт — `captcha_token`, виджет `@hcaptcha/vue3-hcaptcha`, `VITE_HCAPTCHA_SITEKEY`.
+- **Опционально позже:** отдельный Redis только для кэша при необходимости масштабирования (сейчас prod — Redis DB `/2`, local — LocMem).
 
 ### Фаза 3
 
@@ -66,9 +66,8 @@
 
 ## Следующий приоритет (рекомендация)
 
-1. **Закрыть пробелы фазы 2:** hCaptcha + порог попыток + ответ `captcha_required` + поле на фронте.  
-2. **Фаза 3 на фронте:** стена + сохранение раскладки дашборда с уже существующим API.  
-3. **Фаза 4 на фронте:** `useMessagingSocket` + экран диалога.  
-4. **Фаза 5:** UI сообществ + guards **`employee`** для `/work` и API задач (подготовка к фазе 8).
+1. **Фаза 3 на фронте:** стена + сохранение раскладки дашборда с уже существующим API.  
+2. **Фаза 4 на фронте:** `useMessagingSocket` + экран диалога.  
+3. **Фаза 5:** UI сообществ + guards **`employee`** для `/work` и API задач (подготовка к фазе 8).
 
 Порядок можно менять по продукту; этот файл — только фиксация **факта**, не планирование.

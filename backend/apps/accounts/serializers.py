@@ -1,7 +1,13 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from .exceptions import CaptchaRequired
+from .services.captcha import verify_hcaptcha_response
+from .services.login_attempts import clear_fail, fail_key, get_fail_count, increment_fail
 
 User = get_user_model()
 
@@ -42,13 +48,34 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Принимает поле `email` вместо `username`."""
+    """Принимает поле `email` вместо `username`; опционально `captcha_token` после N ошибок."""
 
     username_field = User.USERNAME_FIELD
+    captcha_token = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields[self.username_field] = serializers.EmailField()
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        email = (attrs.get(self.username_field) or "").strip().lower()
+        key = fail_key(request, email) if request else ""
+        fails = get_fail_count(key) if key else 0
+        threshold = getattr(settings, "LOGIN_CAPTCHA_THRESHOLD", 3)
+        raw_captcha = (self.initial_data or {}).get("captcha_token")
+        if fails >= threshold:
+            if not verify_hcaptcha_response(raw_captcha if isinstance(raw_captcha, str) else None):
+                raise CaptchaRequired()
+        try:
+            data = super().validate(attrs)
+        except (serializers.ValidationError, AuthenticationFailed):
+            if key:
+                increment_fail(key)
+            raise
+        if key:
+            clear_fail(key)
+        return data
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
