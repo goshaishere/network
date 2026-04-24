@@ -9,10 +9,22 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(_("email"), unique=True, db_index=True)
     display_name = models.CharField(_("отображаемое имя"), max_length=150, blank=True)
+    class EmploymentKind(models.TextChoices):
+        INTERNAL = "internal", _("Штат")
+        PARTNER = "partner", _("Партнёр")
+
     is_employee = models.BooleanField(
         _("сотрудник (рабочий контур)"),
         default=False,
         help_text=_("Доступ к /work и задачам; выставляет администратор."),
+    )
+    employment_kind = models.CharField(
+        _("тип занятости"),
+        max_length=20,
+        choices=EmploymentKind.choices,
+        blank=True,
+        default="",
+        help_text=_("internal/partner для сотрудников; пусто для обычных пользователей."),
     )
 
     USERNAME_FIELD = "email"

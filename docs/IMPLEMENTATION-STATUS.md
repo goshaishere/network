@@ -17,12 +17,12 @@
 | 3 | Профиль, стена, `/`, дашборд | **Готово** | Лёгкая главная `/` (превью стены и диалогов, быстрые ссылки), `/dashboard` с виджетами и PATCH layout, профиль/стена, настройки `profiles/me`. Drag-and-drop сетка и расширенный каталог виджетов по ролям — позже (см. ROLES §5.2). |
 | 4 | ЛС MVP | **Готово** | REST + WS; фронт: `MessagesListPage`, `ConversationPage`, `useMessagingSocket` (JWT в query, subscribe), Vite proxy `/ws`, входящие без F5; `other_display_name` в списке диалогов. |
 | 5 | Сообщества + доступ к `/work` | **Готово** | Бэк `communities` + фронт `CommunitiesListPage` / `CommunityDetailPage` (лента, join, посты). **`User.is_employee`**, `IsEmployeeOrStaff` на `work/` и tasks stubs; фронт `requiresEmployee`, «Работа» в сайдбаре только staff/employee. |
-| 6 | Прод + наблюдаемость | **Не начато** | Нет prod-деплоя, бэкапов, Sentry/Prometheus по критерию. |
-| 7 | Штат / партнёр | **Не начато** | Нет `EmploymentKind`, `/api/v1/internal/...`, скрытия пунктов для partner. |
-| 8 | Рабочий хаб, канбан | **Частично** | Заглушки `work/dashboard/`, `tasks/groups/`, `tasks/boards/`; **403/401** для обычного `user` без `is_employee`/staff — **есть**. Нет `WorkGroup`, досок, `semantic`, полноценного канбана. |
-| 9 | Админ-панель | **Частично** | `GET admin/users/`, `GET admin/roles/` (заглушка); нет назначения ролей, EmploymentKind, оргструктуры из критерия. |
+| 6 | Прод + наблюдаемость | **Частично** | `health/` есть; добавлены backup/restore скрипты. Нет Sentry/Prometheus и полноценного incident-runbook. |
+| 7 | Штат / партнёр | **Частично** | Есть `EmploymentKind`, `IsInternalEmployeeOrStaff`, `/api/v1/internal/status/`; нет полного покрытия internal-модулей и UI-разделения partner/internal. |
+| 8 | Рабочий хаб, канбан | **Частично** | Реализованы `WorkGroup/Board/Column/Task`, CRUD API, пресеты колонок и базовый UI `/work`; нет расширенного канбана (DND/автоматизации/WS-доски). |
+| 9 | Админ-панель | **Частично** | Есть список пользователей и PATCH ролей/`EmploymentKind`, аудит действий (`admin/audit/`), базовая UI-страница; нет оргструктуры (компания/отдел). |
 | 10+ | Соцрасширение | **Не начато** | — |
-| 11 | Контейнеризация и CI/CD | **Частично** | Есть `docker-compose` и GitHub Actions CI; нет полноценного CD-пайплайна с публикацией образов, автодеплоем, post-deploy health-check и rollback-процедурой. |
+| 11 | Контейнеризация и CI/CD | **Частично** | Добавлены `frontend/Dockerfile`, docker-build в CI, отдельный `deploy.yml` (SSH deploy + migrate + healthcheck); rollback пока в виде процедуры, без full automation. |
 
 Легенда: **Готово** — критерий фазы в целом выполнен; **Частично** — есть инкремент, критерий нет; **Не начато** — нет содержательной реализации.
 
@@ -58,23 +58,34 @@
 - **Сделано (фронт):** `CommunitiesListPage`, `CommunityDetailPage`; `WorkHubPage`, meta **`requiresEmployee`**, guard; пункт «Работа» в `MainSidebar` при `is_staff || is_employee`; `AuthUser.is_employee` в store и i18n.
 - **Позже:** тонкая политика «что видит гость vs user» на уровне отдельных экранов сообществ (сейчас — по возможностям API: без токена — только публичные чтения где разрешено DRF).
 
+### Фаза 6 (инкремент)
+
+- **Сделано:** `health/` плюс операционные скрипты `infra/scripts/backup_db.sh` и `infra/scripts/restore_db.sh`.
+- **Не сделано:** полноценный мониторинг/алерты (Sentry/Prometheus/Grafana), расширенный runbook.
+
+### Фаза 7 (инкремент)
+
+- **Сделано:** `accounts.User.employment_kind`, permission `IsInternalEmployeeOrStaff`, endpoint `/api/v1/internal/status/`.
+- **Не сделано:** полный слой internal API и UI-маршрутов для partner/internal.
+
 ### Фаза 8 (инкремент)
 
-- **Сделано:** доступ к заглушкам work/tasks по роли (см. фазу 5 в таблице).
-- **Не сделано:** доменные модели рабочего хаба, канбан, `semantic` — по критерию пайплайна.
+- **Сделано:** доменные модели `WorkGroup`, `WorkBoard`, `WorkColumn`, `WorkTask`; API `/tasks/groups|boards|columns|`; создание задач и смена колонки; агрегаты `/work/dashboard/`; базовая страница `/work`.
+- **Не сделано:** DnD-канбан, продвинутые фильтры/поиск, realtime обновления доски.
 
-### Фазы 6–7, 10+
+### Фазы 10+
 
 - Нет реализации, соответствующей критериям в `PROJECT-PIPELINE.md`.
 
-### Фаза 11
-
-- **Сделано:** базовая контейнеризация через `docker-compose`, базовый CI workflow в GitHub Actions.
-- **Не сделано:** отдельные production-ready Dockerfile/образы, CI job на publish images, автоматический CD (deploy + миграции + smoke/health-check), формализованный rollback.
-
 ### Фаза 9
 
-- Заглушки под `admin/users`, `admin/roles`; полноценной консоли по критерию нет.
+- **Сделано:** `PATCH /admin/users/` для назначения employee/admin и `employment_kind`, аудит в `admin/audit/`, базовая страница `AdminConsolePage`.
+- **Не сделано:** org-структура и расширенные массовые операции админки.
+
+### Фаза 11
+
+- **Сделано:** `frontend/Dockerfile`; CI job `docker-build` c публикацией в GHCR; `deploy.yml` с шагами deploy → migrate → healthcheck.
+- **Не сделано:** fully automated rollback и окруженческий оркестратор (k8s/terraform) по критерию enterprise-контура.
 
 ---
 

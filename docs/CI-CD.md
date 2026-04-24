@@ -119,3 +119,10 @@ jobs:
 ## 6. Связь с пайплайном проекта
 
 Этапы планирования и сдачи фич — в [PROJECT-PIPELINE.md](./PROJECT-PIPELINE.md).
+
+## 7. Текущая реализация в репозитории
+
+- CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) — backend lint/test, frontend lint/typecheck/test/build, docker build+push в GHCR на `main`.
+- CD: [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) — ручной deploy по `workflow_dispatch` (SSH), `docker compose up`, миграции и health-check.
+- Контейнеры: [`backend/Dockerfile`](../backend/Dockerfile), [`frontend/Dockerfile`](../frontend/Dockerfile), [`docker-compose.yml`](../docker-compose.yml).
+- Бэкапы БД: [`infra/scripts/backup_db.sh`](../infra/scripts/backup_db.sh), [`infra/scripts/restore_db.sh`](../infra/scripts/restore_db.sh).

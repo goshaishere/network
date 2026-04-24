@@ -12,6 +12,7 @@ export interface AuthUser {
   display_name: string;
   is_staff: boolean;
   is_employee: boolean;
+  employment_kind: "" | "internal" | "partner";
 }
 
 export const useAuthStore = defineStore("auth", () => {
@@ -38,6 +39,9 @@ export const useAuthStore = defineStore("auth", () => {
     const u = JSON.parse(raw) as Partial<AuthUser>;
     if (typeof u.is_employee !== "boolean") {
       u.is_employee = false;
+    }
+    if (u.employment_kind !== "internal" && u.employment_kind !== "partner") {
+      u.employment_kind = "";
     }
     user.value = u as AuthUser;
   }

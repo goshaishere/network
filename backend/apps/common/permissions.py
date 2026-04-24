@@ -30,3 +30,17 @@ class IsEmployeeOrStaff(BasePermission):
         if getattr(u, "is_staff", False):
             return True
         return bool(getattr(u, "is_employee", False))
+
+
+class IsInternalEmployeeOrStaff(BasePermission):
+    """Внутренние рабочие API: staff или internal-сотрудник."""
+
+    def has_permission(self, request, view):
+        u = request.user
+        if not u or not u.is_authenticated:
+            return False
+        if getattr(u, "is_staff", False):
+            return True
+        if not getattr(u, "is_employee", False):
+            return False
+        return getattr(u, "employment_kind", "") == "internal"

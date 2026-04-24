@@ -46,10 +46,9 @@ const mainChildren: RouteRecordRaw[] = [
   {
     path: "console",
     name: "console",
-    component: () => import("@/pages/PlaceholderPage.vue"),
+    component: () => import("@/pages/AdminConsolePage.vue"),
     meta: {
       titleKey: "console.stubTitle",
-      stubBodyKey: "console.stubBody",
       requiresAuth: true,
       requiresStaff: true,
     },

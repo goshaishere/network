@@ -31,6 +31,7 @@ def test_register_login_me_logout():
     me = r2.json()
     assert me["email"] == "u1@example.com"
     assert me.get("is_employee") is False
+    assert me.get("employment_kind") == ""
 
     r3 = c.post(
         "/api/v1/auth/login/",
