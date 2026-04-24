@@ -37,3 +37,12 @@ def test_communities_list_guest_and_create_auth():
     )
     assert r_create.status_code == 201
     assert r_create.json()["slug"] == slug
+
+    r_detail = c.get(
+        f"/api/v1/communities/{slug}/",
+        HTTP_AUTHORIZATION=f"Bearer {access}",
+    )
+    assert r_detail.status_code == 200
+    detail = r_detail.json()
+    assert detail["is_member"] is True
+    assert detail["members_count"] >= 1

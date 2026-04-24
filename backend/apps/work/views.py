@@ -1,10 +1,11 @@
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.permissions import IsEmployeeOrStaff
+
 
 class WorkDashboardView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsEmployeeOrStaff]
 
     def get(self, request):
         return Response(
@@ -18,14 +19,14 @@ class WorkDashboardView(APIView):
 
 
 class TasksGroupsStubView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsEmployeeOrStaff]
 
     def get(self, request):
         return Response([])
 
 
 class TasksBoardsStubView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsEmployeeOrStaff]
 
     def get(self, request):
         return Response([])

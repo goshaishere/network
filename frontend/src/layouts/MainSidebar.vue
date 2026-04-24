@@ -83,8 +83,10 @@ const mainLinks = computed(() => {
     { to: "/dashboard", icon: "dashboard", labelKey: "nav.dashboard", exact: false },
     { to: "/communities", icon: "groups", labelKey: "nav.communities", exact: false },
     { to: "/messages", icon: "chat", labelKey: "nav.messages", exact: false },
-    { to: "/work", icon: "work", labelKey: "nav.work", exact: false },
   ];
+  if (auth.isAuthenticated && auth.user && (auth.user.is_staff || auth.user.is_employee)) {
+    links.push({ to: "/work", icon: "work", labelKey: "nav.work", exact: false });
+  }
   if (auth.isAuthenticated && auth.user) {
     links.push({
       to: `/profile/${auth.user.id}`,

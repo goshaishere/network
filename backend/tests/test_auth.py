@@ -28,7 +28,9 @@ def test_register_login_me_logout():
     access = body["access"]
     r2 = c.get("/api/v1/auth/me/", HTTP_AUTHORIZATION=f"Bearer {access}")
     assert r2.status_code == 200
-    assert r2.json()["email"] == "u1@example.com"
+    me = r2.json()
+    assert me["email"] == "u1@example.com"
+    assert me.get("is_employee") is False
 
     r3 = c.post(
         "/api/v1/auth/login/",

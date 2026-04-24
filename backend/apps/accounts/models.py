@@ -9,6 +9,11 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(_("email"), unique=True, db_index=True)
     display_name = models.CharField(_("отображаемое имя"), max_length=150, blank=True)
+    is_employee = models.BooleanField(
+        _("сотрудник (рабочий контур)"),
+        default=False,
+        help_text=_("Доступ к /work и задачам; выставляет администратор."),
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS: list[str] = []

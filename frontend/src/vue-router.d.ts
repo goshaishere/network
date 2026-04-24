@@ -5,6 +5,7 @@ declare module "vue-router" {
     requiresAuth?: boolean;
     guestOnly?: boolean;
     requiresStaff?: boolean;
+    requiresEmployee?: boolean;
     titleKey?: string;
     stubBodyKey?: string;
   }

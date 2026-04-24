@@ -16,10 +16,10 @@
 | 2 | Auth и вход | **Готово** | JWT, blacklist, `me`, сброс пароля; hCaptcha после N ошибок (`captcha_required`), кэш счётчика, `ScopedRateThrottle` на login и сброс пароля; фронт передаёт `captcha_token`, виджет hCaptcha. |
 | 3 | Профиль, стена, `/`, дашборд | **Готово** | Лёгкая главная `/` (превью стены и диалогов, быстрые ссылки), `/dashboard` с виджетами и PATCH layout, профиль/стена, настройки `profiles/me`. Drag-and-drop сетка и расширенный каталог виджетов по ролям — позже (см. ROLES §5.2). |
 | 4 | ЛС MVP | **Готово** | REST + WS; фронт: `MessagesListPage`, `ConversationPage`, `useMessagingSocket` (JWT в query, subscribe), Vite proxy `/ws`, входящие без F5; `other_display_name` в списке диалогов. |
-| 5 | Сообщества | **Частично** | Бэк `communities` (создание, join, посты, открытое/закрытое). Фронт — заглушки; **нет** политики «`/work` недоступен обычному user» как в фазе 5. |
+| 5 | Сообщества + доступ к `/work` | **Готово** | Бэк `communities` + фронт `CommunitiesListPage` / `CommunityDetailPage` (лента, join, посты). **`User.is_employee`**, `IsEmployeeOrStaff` на `work/` и tasks stubs; фронт `requiresEmployee`, «Работа» в сайдбаре только staff/employee. |
 | 6 | Прод + наблюдаемость | **Не начато** | Нет prod-деплоя, бэкапов, Sentry/Prometheus по критерию. |
 | 7 | Штат / партнёр | **Не начато** | Нет `EmploymentKind`, `/api/v1/internal/...`, скрытия пунктов для partner. |
-| 8 | Рабочий хаб, канбан | **Не начато** | Только заглушки `work/dashboard/`, `tasks/groups/`, `tasks/boards/`; нет `WorkGroup`, досок, `semantic`, 403 для `user` на `/work`/tasks API. |
+| 8 | Рабочий хаб, канбан | **Частично** | Заглушки `work/dashboard/`, `tasks/groups/`, `tasks/boards/`; **403/401** для обычного `user` без `is_employee`/staff — **есть**. Нет `WorkGroup`, досок, `semantic`, полноценного канбана. |
 | 9 | Админ-панель | **Частично** | `GET admin/users/`, `GET admin/roles/` (заглушка); нет назначения ролей, EmploymentKind, оргструктуры из критерия. |
 | 10+ | Соцрасширение | **Не начато** | — |
 
@@ -53,12 +53,18 @@
 
 ### Фаза 5
 
-- **Сделано (бэк):** `apps.communities` — список/создание, карточка, join, посты.
-- **Не сделано:** фронт списков/карточки; разделение гость vs `user`; **ограничение `/work` только для employee** (сейчас заглушка с `requiresAuth`, не роль).
+- **Сделано (бэк):** `apps.communities` — список/создание, карточка (`members_count`, `is_member`), join, посты; `apps.accounts` — **`is_employee`**; `apps.common.permissions.IsEmployeeOrStaff`; `apps.work` — dashboard и tasks stubs только для staff или `is_employee`.
+- **Сделано (фронт):** `CommunitiesListPage`, `CommunityDetailPage`; `WorkHubPage`, meta **`requiresEmployee`**, guard; пункт «Работа» в `MainSidebar` при `is_staff || is_employee`; `AuthUser.is_employee` в store и i18n.
+- **Позже:** тонкая политика «что видит гость vs user» на уровне отдельных экранов сообществ (сейчас — по возможностям API: без токена — только публичные чтения где разрешено DRF).
 
-### Фазы 6–8, 10+
+### Фаза 8 (инкремент)
 
-- Нет реализации, соответствующей критериям в `PROJECT-PIPELINE.md` (кроме заглушек под work/tasks в `apps.work`).
+- **Сделано:** доступ к заглушкам work/tasks по роли (см. фазу 5 в таблице).
+- **Не сделано:** доменные модели рабочего хаба, канбан, `semantic` — по критерию пайплайна.
+
+### Фазы 6–7, 10+
+
+- Нет реализации, соответствующей критериям в `PROJECT-PIPELINE.md`.
 
 ### Фаза 9
 
@@ -68,8 +74,8 @@
 
 ## Следующий приоритет (рекомендация)
 
-1. **Фаза 5:** UI сообществ + guards **`employee`** для `/work` и API задач (подготовка к фазе 8).  
+1. **Фаза 8:** `WorkGroup`, доски, канбан, `semantic`, расширение API поверх текущих заглушек.  
 2. **Улучшения фазы 3:** `useDashboardLayout`, DnD-сетка, виджеты по ролям.  
-3. **Улучшения фазы 4:** переподключение WS при refresh токена, индикатор «печатает…», доставка офлайн.
+3. **Улучшения фазы 4:** индикатор «печатает…», доставка офлайн (переподключение WS при refresh — уже учтено в фазе 4 в таблице выше).
 
 Порядок можно менять по продукту; этот файл — только фиксация **факта**, не планирование.

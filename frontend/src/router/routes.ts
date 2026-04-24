@@ -16,20 +16,14 @@ const mainChildren: RouteRecordRaw[] = [
   {
     path: "communities",
     name: "communities",
-    component: () => import("@/pages/PlaceholderPage.vue"),
-    meta: {
-      titleKey: "communities.stubTitle",
-      stubBodyKey: "communities.stubBody",
-    },
+    component: () => import("@/pages/CommunitiesListPage.vue"),
+    meta: { titleKey: "communities.title" },
   },
   {
     path: "communities/:slug",
     name: "community-detail",
-    component: () => import("@/pages/PlaceholderPage.vue"),
-    meta: {
-      titleKey: "communities.detailTitle",
-      stubBodyKey: "communities.stubBody",
-    },
+    component: () => import("@/pages/CommunityDetailPage.vue"),
+    meta: { titleKey: "communities.detailTitle" },
   },
   {
     path: "messages",
@@ -46,12 +40,8 @@ const mainChildren: RouteRecordRaw[] = [
   {
     path: "work",
     name: "work",
-    component: () => import("@/pages/PlaceholderPage.vue"),
-    meta: {
-      titleKey: "work.stubTitle",
-      stubBodyKey: "work.stubBody",
-      requiresAuth: true,
-    },
+    component: () => import("@/pages/WorkHubPage.vue"),
+    meta: { titleKey: "work.title", requiresAuth: true, requiresEmployee: true },
   },
   {
     path: "console",

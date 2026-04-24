@@ -17,6 +17,7 @@ export function setupRouterGuards(_router: Router) {
     const requiresAuth = to.matched.some((r) => r.meta.requiresAuth);
     const guestOnly = to.matched.some((r) => r.meta.guestOnly);
     const requiresStaff = to.matched.some((r) => r.meta.requiresStaff);
+    const requiresEmployee = to.matched.some((r) => r.meta.requiresEmployee);
 
     if (requiresAuth && !auth.isAuthenticated) {
       next({ name: "auth-login", query: { redirect: to.fullPath } });
@@ -31,6 +32,14 @@ export function setupRouterGuards(_router: Router) {
     if (requiresStaff && !auth.user?.is_staff) {
       next({ name: "home" });
       return;
+    }
+
+    if (requiresEmployee && auth.isAuthenticated) {
+      const u = auth.user;
+      if (!u?.is_staff && !u?.is_employee) {
+        next({ name: "home" });
+        return;
+      }
     }
 
     const leaf = to.matched[to.matched.length - 1];

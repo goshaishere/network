@@ -11,6 +11,7 @@ export interface AuthUser {
   email: string;
   display_name: string;
   is_staff: boolean;
+  is_employee: boolean;
 }
 
 export const useAuthStore = defineStore("auth", () => {
@@ -30,7 +31,15 @@ export const useAuthStore = defineStore("auth", () => {
     accessToken.value = localStorage.getItem(LS_ACCESS);
     refreshToken.value = localStorage.getItem(LS_REFRESH);
     const raw = localStorage.getItem(LS_USER);
-    user.value = raw ? (JSON.parse(raw) as AuthUser) : null;
+    if (!raw) {
+      user.value = null;
+      return;
+    }
+    const u = JSON.parse(raw) as Partial<AuthUser>;
+    if (typeof u.is_employee !== "boolean") {
+      u.is_employee = false;
+    }
+    user.value = u as AuthUser;
   }
 
   function persist() {

@@ -18,3 +18,15 @@ class IsStaffUser(BasePermission):
     def has_permission(self, request, view):
         u = request.user
         return bool(u and u.is_authenticated and u.is_staff)
+
+
+class IsEmployeeOrStaff(BasePermission):
+    """Рабочий контур: сотрудник или админ (staff)."""
+
+    def has_permission(self, request, view):
+        u = request.user
+        if not u or not u.is_authenticated:
+            return False
+        if getattr(u, "is_staff", False):
+            return True
+        return bool(getattr(u, "is_employee", False))
