@@ -29,7 +29,10 @@ def _is_member(user, community):
 
 
 class CommunityListCreateView(generics.ListCreateAPIView):
-    queryset = Community.objects.annotate(members_count=Count("memberships", distinct=True))
+    queryset = (
+        Community.objects.annotate(members_count=Count("memberships", distinct=True))
+        .order_by("-created_at")
+    )
     pagination_class = SmallPagePagination
 
     def get_serializer_class(self):

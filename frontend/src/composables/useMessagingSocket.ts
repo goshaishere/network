@@ -60,6 +60,7 @@ export function useMessagingSocket() {
           return;
         }
         if (data.detail === "subscribed") {
+          lastError.value = null;
           return;
         }
         if (

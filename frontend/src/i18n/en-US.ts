@@ -73,6 +73,9 @@ export default {
     peerFallback: "User #{id}",
     conversationN: "Chat #{id}",
     write: "Message…",
+    loadFailed: "Could not load messages.",
+    sendFailed: "Could not send message.",
+    loadOlderFailed: "Could not load older messages.",
   },
   work: {
     stubTitle: "Work",

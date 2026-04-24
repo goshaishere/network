@@ -74,6 +74,9 @@ export default {
     peerFallback: "Участник №{id}",
     conversationN: "Диалог #{id}",
     write: "Сообщение…",
+    loadFailed: "Не удалось загрузить сообщения.",
+    sendFailed: "Не удалось отправить.",
+    loadOlderFailed: "Не удалось подгрузить историю.",
   },
   work: {
     stubTitle: "Рабочий контур",

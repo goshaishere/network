@@ -17,8 +17,14 @@ export const useAuthStore = defineStore("auth", () => {
   const accessToken = ref<string | null>(null);
   const refreshToken = ref<string | null>(null);
   const user = ref<AuthUser | null>(null);
+  /** Увеличивается при смене access (логин, refresh) — для переподключения WS и т.п. */
+  const tokenGeneration = ref(0);
 
   const isAuthenticated = computed(() => Boolean(accessToken.value && user.value));
+
+  function bumpTokenGeneration() {
+    tokenGeneration.value += 1;
+  }
 
   function hydrateFromStorage() {
     accessToken.value = localStorage.getItem(LS_ACCESS);
@@ -41,11 +47,13 @@ export const useAuthStore = defineStore("auth", () => {
     refreshToken.value = refresh;
     user.value = u;
     persist();
+    bumpTokenGeneration();
   }
 
   function setAccess(access: string) {
     accessToken.value = access;
     persist();
+    bumpTokenGeneration();
   }
 
   function applyTokenRefresh(data: { access: string; refresh?: string }) {
@@ -54,6 +62,7 @@ export const useAuthStore = defineStore("auth", () => {
       refreshToken.value = data.refresh;
     }
     persist();
+    bumpTokenGeneration();
   }
 
   function clearSession() {
@@ -61,6 +70,7 @@ export const useAuthStore = defineStore("auth", () => {
     refreshToken.value = null;
     user.value = null;
     persist();
+    bumpTokenGeneration();
   }
 
   async function register(payload: {
@@ -87,6 +97,7 @@ export const useAuthStore = defineStore("auth", () => {
     refreshToken.value = data.refresh;
     localStorage.setItem(LS_ACCESS, data.access);
     localStorage.setItem(LS_REFRESH, data.refresh);
+    bumpTokenGeneration();
     await fetchMe();
   }
 
@@ -123,6 +134,7 @@ export const useAuthStore = defineStore("auth", () => {
     accessToken,
     refreshToken,
     user,
+    tokenGeneration,
     isAuthenticated,
     hydrateFromStorage,
     setSession,

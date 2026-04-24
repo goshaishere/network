@@ -10,6 +10,7 @@
     </div>
 
     <q-banner v-if="lastError" dense rounded class="bg-warning text-dark q-mb-xs">{{ lastError }}</q-banner>
+    <q-banner v-if="loadError" dense rounded class="bg-negative text-white q-mb-xs">{{ loadError }}</q-banner>
     <q-linear-progress v-if="loading" indeterminate color="primary" class="q-mb-xs" />
 
     <q-scroll-area class="col" style="min-height: 0">
@@ -55,7 +56,9 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
 import { useRoute } from "vue-router";
+import { useQuasar } from "quasar";
 import { useI18n } from "vue-i18n";
 import { api } from "@/api/client";
 import { useMessagingSocket } from "@/composables/useMessagingSocket";
@@ -64,13 +67,16 @@ import { useAuthStore } from "@/stores/auth";
 import type { ChatMessage, CursorPage } from "@/types/messaging";
 
 const route = useRoute();
+const $q = useQuasar();
 const auth = useAuthStore();
-const { locale } = useI18n();
+const { tokenGeneration } = storeToRefs(auth);
+const { t, locale } = useI18n();
 
 const convId = computed(() => Number(route.params.id));
 
 const messages = ref<ChatMessage[]>([]);
 const loading = ref(false);
+const loadError = ref("");
 const olderNext = ref<string | null>(null);
 const loadingOlder = ref(false);
 const sending = ref(false);
@@ -107,12 +113,15 @@ function appendIncoming(m: ChatMessage) {
 
 async function loadMessages(id: number) {
   loading.value = true;
+  loadError.value = "";
   try {
     const { data } = await api.get<CursorPage<ChatMessage>>(`/messaging/conversations/${id}/messages/`);
     messages.value = [...data.results].sort((a, b) => a.id - b.id);
     olderNext.value = data.next;
     await nextTick();
     scrollBottom();
+  } catch {
+    loadError.value = t("messages.loadFailed");
   } finally {
     loading.value = false;
   }
@@ -134,6 +143,8 @@ async function loadOlder() {
       })
       .sort((a, b) => a.id - b.id);
     olderNext.value = data.next;
+  } catch {
+    $q.notify({ type: "negative", message: t("messages.loadOlderFailed") });
   } finally {
     loadingOlder.value = false;
   }
@@ -153,6 +164,8 @@ async function send() {
     draft.value = "";
     await nextTick();
     scrollBottom();
+  } catch {
+    $q.notify({ type: "negative", message: t("messages.sendFailed") });
   } finally {
     sending.value = false;
   }
@@ -175,5 +188,12 @@ watch(connected, (ok) => {
   if (ok && Number.isFinite(convId.value) && convId.value > 0) {
     subscribe(convId.value);
   }
+});
+
+watch(tokenGeneration, () => {
+  if (!Number.isFinite(convId.value) || convId.value < 1) return;
+  if (!auth.accessToken) return;
+  disconnect();
+  connect(appendIncoming);
 });
 </script>

@@ -10,6 +10,20 @@
 
 ## 2. Бэкенд (Django + DRF + Channels)
 
+**Запуск:** из каталога `backend/` — `pytest` (в `pytest.ini` задан `DJANGO_SETTINGS_MODULE=config.settings.test`; в `tests/conftest.py` модуль принудительно выставляется до загрузки Django — InMemory channel layer без Redis). Локально быстро: `USE_SQLITE=1 SECRET_KEY=... pytest`.
+
+**Файлы тестов (инкремент по фазам 1–5):**
+
+| Файл | Зона |
+|------|------|
+| `tests/test_health.py` | `GET /api/v1/health/` |
+| `tests/test_auth.py` | регистрация, логин, logout, капча после ошибок, сброс пароля |
+| `tests/test_profiles_walls.py` | `profiles/me`, `profiles/me/dashboard/`, стена |
+| `tests/test_messaging.py` | диалоги, сообщения, `other_display_name`, 403 чужому |
+| `tests/test_communities.py` | список сообществ (гость), создание (auth) |
+| `tests/test_work_media.py` | заглушка `/work/dashboard/`, `POST /media/` без токена |
+| `tests/support.py` | хелпер `register_user` для API-тестов |
+
 | Инструмент | Назначение |
 |------------|------------|
 | **pytest** + **pytest-django** | Запуск тестов, фикстуры БД, маркеры. |

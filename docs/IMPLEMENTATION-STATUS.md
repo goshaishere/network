@@ -48,7 +48,8 @@
 ### Фаза 4
 
 - **Сделано (бэк):** `apps.messaging`, `ws/messaging/?token=`, `MessagingConsumer`, `broadcast_new_message` в группу `conversation_{id}`.
-- **Сделано (фронт):** `src/composables/useMessagingSocket.ts`, `MessagesListPage.vue`, `ConversationPage.vue` (REST + подписка WS, дедуп по `id`), прокси `vite.config.ts` → `/ws`; кнопка «Написать» с профиля; в списке диалогов — `other_display_name`. Прод: задать `VITE_WS_URL` или проксировать WSS до ASGI.
+- **Сделано (фронт):** `src/composables/useMessagingSocket.ts`, `MessagesListPage.vue`, `ConversationPage.vue` (REST + подписка WS, дедуп по `id`), прокси `vite.config.ts` → `/ws`; кнопка «Написать» с профиля; в списке диалогов — `other_display_name`. При **refresh JWT** (`tokenGeneration` в Pinia) — переподключение WS; ошибки загрузки/отправки в UI; `Notify` в Quasar. Прод: задать `VITE_WS_URL` или проксировать WSS до ASGI.
+- **Сделано (надёжность):** `broadcast_new_message` не роняет `POST` при недоступном Redis — лог + продолжение; pytest: `config.settings.test` + InMemory channel layer, принудительно в `tests/conftest.py`; см. `tests/test_messaging.py`.
 
 ### Фаза 5
 
