@@ -36,8 +36,8 @@
 | GET/PATCH | `/api/v1/profiles/me/dashboard/` | Раскладка виджетов **`/dashboard`** (JSON + валидация типов по роли) |
 | GET | `/api/v1/profiles/{user_id}/` | Публичный профиль (с учётом приватности) |
 | GET | `/api/v1/walls/{user_id}/posts/` | Лента стены |
-| POST | `/api/v1/walls/{user_id}/posts/` | Новый пост на стене (права в сервисе) |
-| PATCH/DELETE | `/api/v1/walls/posts/{id}/` | Редактирование / удаление своего поста |
+| POST | `/api/v1/walls/{user_id}/posts/` | Новый пост (текст; опционально **`uploaded_file_id`** после **`POST /media/`**; в ответе **`attachment_url`**, **`hidden_from_feed`**) |
+| PATCH/DELETE | `/api/v1/walls/posts/{id}/` | Текст — автор; **`hidden_from_feed`** — автор или владелец стены; удаление — автор |
 
 **Сообщества** (роль `user+`, не путать с рабочими группами):
 
@@ -47,7 +47,8 @@
 | GET | `/api/v1/communities/mine/` | Сообщества, где пользователь — участник (JWT) |
 | GET/PATCH | `/api/v1/communities/{slug}/` | Карточка, настройки (модераторы) |
 | POST | `/api/v1/communities/{slug}/join/` | Вступить |
-| GET/POST | `/api/v1/communities/{slug}/posts/` | Лента сообщества |
+| GET/POST | `/api/v1/communities/{slug}/posts/` | Лента сообщества / новый пост (**`uploaded_file_id`**, **`attachment_url`**, **`hidden_from_feed`**) |
+| GET/PATCH | `/api/v1/communities/{slug}/posts/{id}/` | Карточка поста; **`hidden_from_feed`** — автор или модератор; тело — автор |
 
 **Сообщения:**
 
@@ -62,7 +63,8 @@
 
 | Метод | Путь | Назначение |
 |--------|------|------------|
-| GET | `/api/v1/social/feed/` | Персональная лента: стены друзей (публичный профиль) + посты из сообществ пользователя; пагинация **`?offset=`** |
+| GET | `/api/v1/social/feed/` | Персональная лента: стены друзей (публичный профиль) + посты из сообществ пользователя; пагинация **`?offset=`**; элементы с **`attachment_url`**; посты с **`hidden_from_feed=true`** не включаются |
+| POST | `/api/v1/social/reports/` | Жалоба на пост (**`target_type`**: `wall_post` \| `community_post`, **`target_id`**, **`reason`**) — задел модерации ленты |
 | GET | `/api/v1/social/friends/` | Список друзей (принятые заявки) |
 | POST | `/api/v1/social/friend-requests/` | Отправить заявку в друзья |
 | GET | `/api/v1/social/friend-requests/incoming/` | Входящие заявки |
@@ -122,19 +124,30 @@
 
 | Файл | Назначение |
 |------|------------|
-| `models.py` | `Post` (wall_owner, author, text, created_at, edited_at) |
-| `serializers.py` | `PostSerializer`, create/update |
-| `views.py` | `WallPostListCreateView`, `PostDetailView` |
+| `models.py` | `WallPost` (wall_owner, author, body, вложение **`UploadedFile`**, **`hidden_from_feed`**) |
+| `serializers.py` | `WallPostSerializer` (**`attachment_url`**, **`uploaded_file_id`**) |
+| `views.py` | `WallPostListCreateView`, `WallPostDetailView` |
+| `permissions.py` | **`WallPostWritePermission`** (текст / скрытие из ленты / удаление) |
 | `services/wall.py` | Кто может постить на чью стену |
 
 ### `apps.communities`
 
 | Файл | Назначение |
 |------|------------|
-| `models.py` | `Community` (slug, тип открытости), `CommunityMembership`, посты сообщества |
-| `serializers.py` | Список, деталь, посты |
-| `views.py` | ViewSets; права: членство для закрытых, модерация |
-| `permissions.py` | Просмотр публичного / только участники |
+| `models.py` | `Community`, `CommunityMembership`, **`CommunityPost`** (вложение, **`hidden_from_feed`**) |
+| `serializers.py` | Список, деталь, посты (**`attachment_url`**, **`uploaded_file_id`**) |
+| `views.py` | Список/карточка/join, посты, **`CommunityPostDetailView`** |
+| `permissions.py` | **`CommunityPostWritePermission`** (текст — автор; скрытие из ленты — автор или модератор) |
+
+### `apps.social`
+
+| Файл | Назначение |
+|------|------------|
+| `models.py` | **`FriendRequest`**, **`ContentReport`** (жалоба на пост) |
+| `feed.py` | **`build_feed_page`** — слияние стен и постов сообществ, offset |
+| `serializers.py` | Заявки в друзья, создание жалобы |
+| `views.py` | Лента, друзья, **`ContentReportCreateView`** |
+| `admin.py` | **`ContentReport`** |
 
 ### `apps.messaging`
 

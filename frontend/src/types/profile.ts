@@ -52,6 +52,8 @@ export interface WallPost {
   body: string;
   created_at: string;
   updated_at: string;
+  attachment_url?: string;
+  hidden_from_feed?: boolean;
 }
 
 export interface Paginated<T> {

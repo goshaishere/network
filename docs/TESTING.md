@@ -21,6 +21,7 @@
 | `tests/test_profiles_walls.py` | `profiles/me`, `profiles/me/dashboard/`, стена |
 | `tests/test_messaging.py` | диалоги, сообщения, `other_display_name`, 403 чужому |
 | `tests/test_communities.py` | список сообществ (гость), создание (auth) |
+| `tests/test_social_feed.py` | лента, «мои сообщества», скрытие из ленты, **`POST /social/reports/`** |
 | `tests/test_work_media.py` | заглушка `/work/dashboard/`, `POST /media/` без токена |
 | `tests/support.py` | хелпер `register_user` для API-тестов |
 

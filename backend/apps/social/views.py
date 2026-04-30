@@ -1,13 +1,18 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .feed import build_feed_page
 from .models import FriendRequest
-from .serializers import FriendRequestCreateSerializer, FriendRequestSerializer, UserMiniSerializer
+from .serializers import (
+    ContentReportCreateSerializer,
+    FriendRequestCreateSerializer,
+    FriendRequestSerializer,
+    UserMiniSerializer,
+)
 
 User = get_user_model()
 
@@ -20,7 +25,7 @@ class FeedView(APIView):
             offset = int(request.query_params.get("offset", "0"))
         except ValueError:
             offset = 0
-        results, next_offset = build_feed_page(request.user, offset=offset)
+        results, next_offset = build_feed_page(request.user, offset=offset, request=request)
         return Response({"results": results, "next_offset": next_offset})
 
 
@@ -113,3 +118,8 @@ class FriendRequestRejectView(APIView):
         fr.status = FriendRequest.Status.REJECTED
         fr.save(update_fields=["status"])
         return Response(FriendRequestSerializer(fr).data)
+
+
+class ContentReportCreateView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ContentReportCreateSerializer

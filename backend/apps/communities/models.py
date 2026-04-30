@@ -46,6 +46,19 @@ class CommunityPost(models.Model):
     community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="posts")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     body = models.TextField(_("текст"))
+    uploaded_file = models.ForeignKey(
+        "media.UploadedFile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="community_posts",
+        verbose_name=_("вложение"),
+    )
+    hidden_from_feed = models.BooleanField(
+        _("скрыто из общей ленты"),
+        default=False,
+        help_text=_("Не показывается в /social/feed/; в ленте сообщества остаётся."),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

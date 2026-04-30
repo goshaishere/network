@@ -4,7 +4,7 @@ import pytest
 from django.contrib.auth import get_user_model
 
 from apps.communities.models import Community, CommunityMembership, CommunityPost
-from apps.social.models import FriendRequest
+from apps.social.models import ContentReport, FriendRequest
 from apps.walls.models import WallPost
 
 from tests.support import register_user
@@ -86,3 +86,97 @@ def test_communities_mine_lists_only_memberships():
     assert r.status_code == 200
     slugs = {x["slug"] for x in r.json()["results"]}
     assert slugs == {"mine-b"}
+
+
+@pytest.mark.django_db
+def test_feed_excludes_wall_posts_hidden_from_feed():
+    c = pytest.importorskip("django.test").Client()
+    a = register_user(c, "hide-a@example.com", password="VerySecret1!")
+    b = register_user(c, "hide-b@example.com", password="VerySecret1!")
+
+    FriendRequest.objects.create(
+        from_user_id=a["user"]["id"],
+        to_user_id=b["user"]["id"],
+        status=FriendRequest.Status.ACCEPTED,
+    )
+
+    WallPost.objects.create(
+        wall_owner_id=b["user"]["id"],
+        author_id=b["user"]["id"],
+        body="visible in feed",
+    )
+    WallPost.objects.create(
+        wall_owner_id=b["user"]["id"],
+        author_id=b["user"]["id"],
+        body="hidden from feed",
+        hidden_from_feed=True,
+    )
+
+    login = c.post(
+        "/api/v1/auth/login/",
+        data={"email": "hide-a@example.com", "password": "VerySecret1!"},
+        content_type="application/json",
+    )
+    auth = {"HTTP_AUTHORIZATION": f"Bearer {login.json()['access']}"}
+
+    r = c.get("/api/v1/social/feed/", **auth)
+    assert r.status_code == 200
+    bodies = [x.get("body") for x in r.json()["results"]]
+    assert "visible in feed" in bodies
+    assert "hidden from feed" not in bodies
+
+
+@pytest.mark.django_db
+def test_social_report_create():
+    c = pytest.importorskip("django.test").Client()
+    u = register_user(c, "rep-u@example.com", password="VerySecret1!")
+    post = WallPost.objects.create(
+        wall_owner_id=u["user"]["id"],
+        author_id=u["user"]["id"],
+        body="to report",
+    )
+
+    login = c.post(
+        "/api/v1/auth/login/",
+        data={"email": "rep-u@example.com", "password": "VerySecret1!"},
+        content_type="application/json",
+    )
+    auth = {"HTTP_AUTHORIZATION": f"Bearer {login.json()['access']}"}
+
+    r = c.post(
+        "/api/v1/social/reports/",
+        data={
+            "target_type": ContentReport.TargetType.WALL_POST,
+            "target_id": post.id,
+            "reason": "spam",
+        },
+        content_type="application/json",
+        **auth,
+    )
+    assert r.status_code == 201
+    assert ContentReport.objects.filter(
+        reporter_id=u["user"]["id"],
+        target_type=ContentReport.TargetType.WALL_POST,
+        target_id=post.id,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_social_report_requires_auth():
+    c = pytest.importorskip("django.test").Client()
+    u = register_user(c, "rep-anon@example.com", password="VerySecret1!")
+    post = WallPost.objects.create(
+        wall_owner_id=u["user"]["id"],
+        author_id=u["user"]["id"],
+        body="x",
+    )
+    r = c.post(
+        "/api/v1/social/reports/",
+        data={
+            "target_type": ContentReport.TargetType.WALL_POST,
+            "target_id": post.id,
+            "reason": "",
+        },
+        content_type="application/json",
+    )
+    assert r.status_code in (401, 403)

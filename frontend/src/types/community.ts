@@ -25,6 +25,8 @@ export interface CommunityPost {
   author_id: number;
   body: string;
   created_at: string;
+  attachment_url?: string;
+  hidden_from_feed?: boolean;
 }
 
 export interface PaginatedCommunities {

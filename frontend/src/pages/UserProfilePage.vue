@@ -38,6 +38,17 @@
                 :rows="2"
                 :label="$t('profile.wallNewPost')"
               />
+              <q-file
+                v-model="newAttachmentFile"
+                class="q-mt-sm"
+                outlined
+                dense
+                clearable
+                counter
+                max-file-size="5242880"
+                accept="image/*"
+                :label="$t('profile.wallAttach')"
+              />
               <q-btn
                 class="q-mt-sm"
                 color="primary"
@@ -59,6 +70,24 @@
                 </q-item-label>
                 <q-item-label caption>{{ formatDate(p.created_at) }}</q-item-label>
                 <q-item-label class="q-mt-xs" style="white-space: pre-wrap">{{ p.body }}</q-item-label>
+                <div v-if="p.attachment_url" class="q-mt-sm">
+                  <q-img
+                    :src="p.attachment_url"
+                    :alt="$t('profile.attachmentAlt')"
+                    fit="contain"
+                    style="max-height: 240px; max-width: 100%"
+                    class="rounded-borders"
+                  />
+                </div>
+                <q-toggle
+                  v-if="canModerateWallFeed(p)"
+                  class="q-mt-sm"
+                  dense
+                  :model-value="Boolean(p.hidden_from_feed)"
+                  :disable="wallHideSavingId === p.id"
+                  :label="$t('profile.hideFromFeed')"
+                  @update:model-value="(v: boolean) => patchWallHidden(p, v)"
+                />
                 <div v-if="canEditPost(p)" class="q-mt-sm">
                   <template v-if="editingId === p.id">
                     <q-input v-model="editBody" outlined type="textarea" autogrow dense />
@@ -102,6 +131,7 @@ import { useQuasar } from "quasar";
 import { useI18n } from "vue-i18n";
 import { api } from "@/api/client";
 import { toRelativeApiPath } from "@/lib/apiUrl";
+import { uploadMediaFile } from "@/lib/uploadMedia";
 import { useAuthStore } from "@/stores/auth";
 import type { Paginated, ProfilePublic, WallPost } from "@/types/profile";
 
@@ -131,9 +161,11 @@ const loadingMore = ref(false);
 const posting = ref(false);
 
 const newPostBody = ref("");
+const newAttachmentFile = ref<File | null>(null);
 const editingId = ref<number | null>(null);
 const editBody = ref("");
 const startingChat = ref(false);
+const wallHideSavingId = ref<number | null>(null);
 
 function formatDate(iso: string): string {
   try {
@@ -149,6 +181,22 @@ function formatDate(iso: string): string {
 
 function canEditPost(p: WallPost): boolean {
   return auth.isAuthenticated && auth.user?.id === p.author_id;
+}
+
+function canModerateWallFeed(p: WallPost): boolean {
+  if (!auth.isAuthenticated || !auth.user) return false;
+  return auth.user.id === p.author_id || auth.user.id === p.wall_owner_id;
+}
+
+async function patchWallHidden(p: WallPost, val: boolean) {
+  wallHideSavingId.value = p.id;
+  try {
+    const { data } = await api.patch<WallPost>(`/walls/posts/${p.id}/`, { hidden_from_feed: val });
+    const i = posts.value.findIndex((x) => x.id === p.id);
+    if (i >= 0) posts.value[i] = data;
+  } finally {
+    wallHideSavingId.value = null;
+  }
 }
 
 async function loadProfile() {
@@ -202,11 +250,18 @@ async function submitPost() {
   if (!newPostBody.value.trim()) return;
   posting.value = true;
   try {
+    let uploaded_file_id: number | undefined;
+    if (newAttachmentFile.value) {
+      const up = await uploadMediaFile(newAttachmentFile.value);
+      uploaded_file_id = up.id;
+    }
     const { data } = await api.post<WallPost>(`/walls/${userId.value}/posts/`, {
       body: newPostBody.value.trim(),
+      ...(uploaded_file_id != null ? { uploaded_file_id } : {}),
     });
     posts.value.unshift(data);
     newPostBody.value = "";
+    newAttachmentFile.value = null;
   } finally {
     posting.value = false;
   }

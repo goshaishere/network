@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from apps.common.pagination import SmallPagePagination
 
 from .models import Community, CommunityMembership, CommunityPost
+from .permissions import CommunityPostWritePermission
 from .serializers import (
     CommunityDetailSerializer,
     CommunityListSerializer,
@@ -106,7 +107,7 @@ class CommunityPostListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         slug = self.kwargs["slug"]
         return CommunityPost.objects.filter(community__slug=slug).select_related(
-            "author", "community"
+            "author", "community", "uploaded_file"
         )
 
     def list(self, request, *args, **kwargs):
@@ -120,3 +121,35 @@ class CommunityPostListCreateView(generics.ListCreateAPIView):
         if not _is_member(self.request.user, community):
             raise PermissionDenied("Нужно вступить в сообщество.")
         serializer.save(community=community, author=self.request.user)
+
+
+class CommunityPostDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = CommunityPostSerializer
+    permission_classes = [CommunityPostWritePermission]
+    lookup_field = "pk"
+    http_method_names = ["get", "patch", "head", "options"]
+
+    def get_queryset(self):
+        slug = self.kwargs["slug"]
+        return CommunityPost.objects.filter(community__slug=slug).select_related(
+            "author", "community", "uploaded_file"
+        )
+
+    def get_permissions(self):
+        if self.request.method in ("PATCH", "PUT"):
+            return [permissions.IsAuthenticated(), CommunityPostWritePermission()]
+        return [CommunityPostWritePermission()]
+
+    def get_object(self):
+        obj = super().get_object()
+        c = obj.community
+        req = self.request
+        if req.method == "GET":
+            if c.is_open:
+                return obj
+            if req.user.is_authenticated and _is_member(req.user, c):
+                return obj
+            raise PermissionDenied("Нет доступа.")
+        if not req.user.is_authenticated or not _is_member(req.user, c):
+            raise PermissionDenied("Нужно вступить в сообщество.")
+        return obj

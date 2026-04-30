@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    ContentReportCreateView,
     FeedView,
     FriendRequestAcceptView,
     FriendRequestCreateView,
@@ -10,6 +11,7 @@ from .views import (
 )
 
 urlpatterns = [
+    path("social/reports/", ContentReportCreateView.as_view(), name="social-reports"),
     path("social/feed/", FeedView.as_view(), name="social-feed"),
     path("social/friends/", FriendsListView.as_view(), name="social-friends"),
     path("social/friend-requests/", FriendRequestCreateView.as_view(), name="social-friend-requests"),

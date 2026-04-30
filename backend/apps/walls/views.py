@@ -5,7 +5,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from apps.common.pagination import SmallPagePagination
-from apps.common.permissions import IsOwnerOrReadOnly
+from apps.walls.permissions import WallPostWritePermission
 from apps.profiles.models import Profile
 
 from .models import WallPost
@@ -20,7 +20,9 @@ class WallPostListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         uid = self.kwargs["user_id"]
-        return WallPost.objects.filter(wall_owner_id=uid).select_related("author", "wall_owner")
+        return WallPost.objects.filter(wall_owner_id=uid).select_related(
+            "author", "wall_owner", "uploaded_file"
+        )
 
     def list(self, request, *args, **kwargs):
         owner = get_object_or_404(User, pk=kwargs["user_id"])
@@ -42,13 +44,13 @@ class WallPostListCreateView(generics.ListCreateAPIView):
 
 class WallPostDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = WallPostSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, WallPostWritePermission]
     lookup_field = "pk"
 
     def get_permissions(self):
         if self.request.method in ("PATCH", "DELETE", "PUT"):
-            return [permissions.IsAuthenticated(), IsOwnerOrReadOnly()]
+            return [permissions.IsAuthenticated(), WallPostWritePermission()]
         return super().get_permissions()
 
     def get_queryset(self):
-        return WallPost.objects.select_related("author", "wall_owner")
+        return WallPost.objects.select_related("author", "wall_owner", "uploaded_file")

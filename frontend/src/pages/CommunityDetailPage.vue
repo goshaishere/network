@@ -31,6 +31,17 @@
       <q-card v-if="auth.isAuthenticated && community.is_member" flat bordered class="q-mb-md">
         <q-card-section>
           <q-input v-model="newBody" outlined type="textarea" autogrow :rows="2" :label="$t('communities.newPost')" />
+          <q-file
+            v-model="newAttachmentFile"
+            class="q-mt-sm"
+            outlined
+            dense
+            clearable
+            counter
+            max-file-size="5242880"
+            accept="image/*"
+            :label="$t('communities.postAttach')"
+          />
           <q-btn
             class="q-mt-sm"
             color="primary"
@@ -47,6 +58,24 @@
           <q-item-section>
             <q-item-label caption>#{{ p.author_id }} · {{ formatDate(p.created_at) }}</q-item-label>
             <q-item-label class="q-mt-xs" style="white-space: pre-wrap">{{ p.body }}</q-item-label>
+            <div v-if="p.attachment_url" class="q-mt-sm">
+              <q-img
+                :src="p.attachment_url"
+                :alt="$t('communities.attachmentAlt')"
+                fit="contain"
+                style="max-height: 240px; max-width: 100%"
+                class="rounded-borders"
+              />
+            </div>
+            <q-toggle
+              v-if="auth.isAuthenticated && community?.is_member && auth.user?.id === p.author_id"
+              dense
+              class="q-mt-sm"
+              :model-value="Boolean(p.hidden_from_feed)"
+              :disable="postHideSavingId === p.id"
+              :label="$t('communities.hideFromFeed')"
+              @update:model-value="(v: boolean) => patchPostHidden(p, v)"
+            />
           </q-item-section>
         </q-item>
       </q-list>
@@ -73,6 +102,7 @@ import { useQuasar } from "quasar";
 import { useI18n } from "vue-i18n";
 import { api } from "@/api/client";
 import { toRelativeApiPath } from "@/lib/apiUrl";
+import { uploadMediaFile } from "@/lib/uploadMedia";
 import { useAuthStore } from "@/stores/auth";
 import type { CommunityDetail, CommunityPost, PaginatedPosts } from "@/types/community";
 
@@ -95,6 +125,8 @@ const loadingMorePosts = ref(false);
 const posting = ref(false);
 const joining = ref(false);
 const newBody = ref("");
+const newAttachmentFile = ref<File | null>(null);
+const postHideSavingId = ref<number | null>(null);
 
 function formatDate(iso: string): string {
   try {
@@ -167,15 +199,37 @@ async function doJoin() {
   }
 }
 
+async function patchPostHidden(p: CommunityPost, val: boolean) {
+  postHideSavingId.value = p.id;
+  try {
+    const { data } = await api.patch<CommunityPost>(`/communities/${slug.value}/posts/${p.id}/`, {
+      hidden_from_feed: val,
+    });
+    const i = posts.value.findIndex((x) => x.id === p.id);
+    if (i >= 0) posts.value[i] = data;
+  } catch (e: unknown) {
+    $q.notify({ type: "negative", message: String(e) });
+  } finally {
+    postHideSavingId.value = null;
+  }
+}
+
 async function submitPost() {
   if (!newBody.value.trim()) return;
   posting.value = true;
   try {
+    let uploaded_file_id: number | undefined;
+    if (newAttachmentFile.value) {
+      const up = await uploadMediaFile(newAttachmentFile.value);
+      uploaded_file_id = up.id;
+    }
     const { data } = await api.post<CommunityPost>(`/communities/${slug.value}/posts/`, {
       body: newBody.value.trim(),
+      ...(uploaded_file_id != null ? { uploaded_file_id } : {}),
     });
     posts.value.unshift(data);
     newBody.value = "";
+    newAttachmentFile.value = null;
   } catch (e: unknown) {
     $q.notify({ type: "negative", message: String(e) });
   } finally {

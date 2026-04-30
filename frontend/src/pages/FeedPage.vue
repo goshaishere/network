@@ -27,6 +27,20 @@
           </q-item-label>
           <q-item-label caption>{{ formatDate(it.created_at) }}</q-item-label>
           <q-item-label class="q-mt-xs" style="white-space: pre-wrap">{{ it.body }}</q-item-label>
+          <div v-if="it.attachment_url" class="q-mt-sm">
+            <q-img
+              :src="it.attachment_url"
+              :alt="$t('feed.attachmentAlt')"
+              fit="contain"
+              style="max-height: 280px; max-width: 100%"
+              class="rounded-borders"
+            />
+          </div>
+        </q-item-section>
+        <q-item-section v-if="auth.isAuthenticated" side top>
+          <q-btn flat dense round icon="flag" color="grey-7" @click="openReport(it)">
+            <q-tooltip>{{ $t("feed.report") }}</q-tooltip>
+          </q-btn>
         </q-item-section>
       </q-item>
     </q-list>
@@ -41,22 +55,45 @@
         </div>
       </template>
     </q-infinite-scroll>
+
+    <q-dialog v-model="reportOpen">
+      <q-card style="min-width: 320px; max-width: 480px">
+        <q-card-section class="text-subtitle1">{{ $t("feed.reportTitle") }}</q-card-section>
+        <q-card-section class="q-pt-none text-body2 text-grey-8">{{ $t("feed.reportHint") }}</q-card-section>
+        <q-card-section>
+          <q-input v-model="reportReason" type="textarea" autogrow outlined :label="$t('feed.reportReason')" />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn v-close-popup flat :label="$t('profile.cancel')" />
+          <q-btn color="primary" :loading="reportSending" :label="$t('feed.reportSend')" @click="submitReport" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { useQuasar } from "quasar";
 import { useI18n } from "vue-i18n";
 import { api } from "@/api/client";
+import { useAuthStore } from "@/stores/auth";
 import type { FeedItem, FeedResponse } from "@/types/feed";
 
 const { t, locale } = useI18n();
+const $q = useQuasar();
+const auth = useAuthStore();
 
 const items = ref<FeedItem[]>([]);
 const initialLoading = ref(true);
 const loadError = ref("");
 let offset = 0;
 let exhausted = false;
+
+const reportOpen = ref(false);
+const reportTarget = ref<FeedItem | null>(null);
+const reportReason = ref("");
+const reportSending = ref(false);
 
 function formatDate(iso: string): string {
   try {
@@ -67,6 +104,31 @@ function formatDate(iso: string): string {
     }).format(d);
   } catch {
     return iso;
+  }
+}
+
+function openReport(it: FeedItem) {
+  reportTarget.value = it;
+  reportReason.value = "";
+  reportOpen.value = true;
+}
+
+async function submitReport() {
+  const it = reportTarget.value;
+  if (!it) return;
+  reportSending.value = true;
+  try {
+    await api.post("/social/reports/", {
+      target_type: it.type === "wall" ? "wall_post" : "community_post",
+      target_id: it.id,
+      reason: reportReason.value.trim(),
+    });
+    reportOpen.value = false;
+    $q.notify({ type: "positive", message: t("feed.reportSent") });
+  } catch {
+    $q.notify({ type: "negative", message: t("feed.reportFailed") });
+  } finally {
+    reportSending.value = false;
   }
 }
 

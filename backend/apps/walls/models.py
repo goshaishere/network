@@ -15,6 +15,19 @@ class WallPost(models.Model):
         related_name="wall_posts_authored",
     )
     body = models.TextField(_("текст"))
+    uploaded_file = models.ForeignKey(
+        "media.UploadedFile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="wall_posts",
+        verbose_name=_("вложение"),
+    )
+    hidden_from_feed = models.BooleanField(
+        _("скрыто из общей ленты"),
+        default=False,
+        help_text=_("Пост остаётся на стене, но не попадает в /social/feed/."),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

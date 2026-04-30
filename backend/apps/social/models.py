@@ -26,3 +26,27 @@ class FriendRequest(models.Model):
             models.UniqueConstraint(fields=["from_user", "to_user"], name="social_unique_friend_request")
         ]
         ordering = ("-created_at",)
+
+
+class ContentReport(models.Model):
+    """Жалоба на пост (модерация ленты / контента)."""
+
+    class TargetType(models.TextChoices):
+        WALL_POST = "wall_post", "Пост на стене"
+        COMMUNITY_POST = "community_post", "Пост в сообществе"
+
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="content_reports_sent",
+    )
+    target_type = models.CharField(max_length=32, choices=TargetType.choices)
+    target_id = models.PositiveIntegerField()
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=("target_type", "target_id")),
+        ]

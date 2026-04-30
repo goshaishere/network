@@ -8,6 +8,8 @@ export type FeedItem =
       author_id: number;
       author_display_name: string;
       wall_owner_display_name: string;
+      attachment_url?: string;
+      hidden_from_feed?: boolean;
     }
   | {
       type: "community";
@@ -19,6 +21,8 @@ export type FeedItem =
       community_name: string;
       author_id: number;
       author_display_name: string;
+      attachment_url?: string;
+      hidden_from_feed?: boolean;
     };
 
 export interface FeedResponse {
