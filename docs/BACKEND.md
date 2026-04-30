@@ -160,9 +160,10 @@
 ## 8. Роли, сообщества, рабочий контур и админка
 
 - **Сообщества:** `IsAuthenticated` (и проверки членства для закрытых) — см. таблицу выше и [ROLES-AND-TASKS.md](./ROLES-AND-TASKS.md) §2.  
-- **Работа:** `IsEmployee`, `IsAdmin`, участник **`WorkGroup`**; префикс `/api/v1/tasks/...` — группы, доски, `preset`, `columns.semantic`, задачи.  
+- **Работа:** `IsEmployeeOrStaff`; данные досок/задач только при **`WorkGroupMembership`**; префикс **`/api/v1/tasks/...`** — группы, доски (`generic_pm` / `it_sdlc` / `custom`), колонки с **`semantic`**, задачи, **`POST /tasks/columns/reorder/`**. Пресеты начальных колонок — **`apps/work/board_columns.py`** (ROLES §7.2).  
+- **Задел CRM (фаза 8):** модели **`WorkCounterparty`**, **`WorkContact`** в приложении **`work`** (пока без FK из задач).  
 - **Штат vs партнёр:** permission **`IsInternalEmployeeOrStaff`** на префикс **`/api/v1/internal/...`** (только `EmploymentKind.internal` либо staff); партнёр — без internal-модулей.  
 - **`GET /api/v1/work/dashboard/`** — агрегаты для `/work`, поля **`employment_scope`**, при штате — **`internal_extension_available`**.  
 - **`GET /api/v1/internal/work/dashboard/`** — то же + блок **`internal`** (оценка открытых задач, задел CRM), ответ помечен **`scope: internal_api`**.  
 - **Админка:** `/api/v1/admin/...`, роль `admin`.  
-- Сервисы: `tasks/services/board.py`, `tasks/services/columns.py` (пресеты и единый перечень `semantic` — §6 в ROLES-AND-TASKS).
+- Единый перечень **`Column.semantic`** — [ROLES-AND-TASKS.md](./ROLES-AND-TASKS.md) §7.1.

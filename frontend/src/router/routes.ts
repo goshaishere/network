@@ -38,10 +38,20 @@ const mainChildren: RouteRecordRaw[] = [
     meta: { titleKey: "messages.chatTitle", requiresAuth: true },
   },
   {
-    path: "work",
-    name: "work",
+    path: "work/groups/:groupId",
+    name: "work-group-detail",
     component: () => import("@/pages/WorkHubPage.vue"),
     meta: { titleKey: "work.title", requiresAuth: true, requiresEmployee: true },
+  },
+  {
+    path: "work/groups",
+    name: "work-groups",
+    component: () => import("@/pages/WorkHubPage.vue"),
+    meta: { titleKey: "work.title", requiresAuth: true, requiresEmployee: true },
+  },
+  {
+    path: "work",
+    redirect: { name: "work-groups" },
   },
   {
     path: "internal",

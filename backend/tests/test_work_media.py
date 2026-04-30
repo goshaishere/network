@@ -113,6 +113,117 @@ def test_work_group_board_and_task_crud_for_employee():
 
 
 @pytest.mark.django_db
+def test_board_preset_columns_match_roles_doc():
+    """Пресеты колонок — ROLES-AND-TASKS §7.2."""
+    c = Client()
+    reg = register_user(c, "preset-doc@example.com")
+    User.objects.filter(pk=reg["user"]["id"]).update(is_employee=True)
+    auth = {"HTTP_AUTHORIZATION": f"Bearer {reg['access']}"}
+
+    g = c.post(
+        "/api/v1/tasks/groups/",
+        data={"name": "Preset G", "slug": "preset-g", "description": ""},
+        content_type="application/json",
+        **auth,
+    )
+    gid = g.json()["id"]
+
+    r_pm = c.post(
+        "/api/v1/tasks/boards/",
+        data={"group": gid, "name": "PM", "preset": "generic_pm"},
+        content_type="application/json",
+        **auth,
+    )
+    cols_pm = c.get(
+        "/api/v1/tasks/columns/", data={"board": r_pm.json()["id"]}, **auth
+    ).json()
+    assert [x["semantic"] for x in cols_pm] == [
+        "planned",
+        "in_progress",
+        "review",
+        "paused",
+        "done",
+        "cancelled",
+    ]
+
+    r_sd = c.post(
+        "/api/v1/tasks/boards/",
+        data={"group": gid, "name": "SDLC", "preset": "it_sdlc"},
+        content_type="application/json",
+        **auth,
+    )
+    cols_sd = c.get(
+        "/api/v1/tasks/columns/", data={"board": r_sd.json()["id"]}, **auth
+    ).json()
+    assert [x["semantic"] for x in cols_sd] == ["backlog", "development", "testing", "released"]
+
+    r_c = c.post(
+        "/api/v1/tasks/boards/",
+        data={"group": gid, "name": "Emptyish", "preset": "custom"},
+        content_type="application/json",
+        **auth,
+    )
+    cols_c = c.get("/api/v1/tasks/columns/", data={"board": r_c.json()["id"]}, **auth).json()
+    assert len(cols_c) == 1
+    assert cols_c[0]["semantic"] == "planned"
+
+
+@pytest.mark.django_db
+def test_non_member_cannot_see_or_mutate_peer_group_tasks():
+    c = Client()
+    owner = register_user(c, "wg-owner@example.com")
+    outsider = register_user(c, "wg-outsider@example.com")
+    User.objects.filter(pk=owner["user"]["id"]).update(is_employee=True)
+    User.objects.filter(pk=outsider["user"]["id"]).update(is_employee=True)
+    auth_o = {"HTTP_AUTHORIZATION": f"Bearer {owner['access']}"}
+    auth_x = {"HTTP_AUTHORIZATION": f"Bearer {outsider['access']}"}
+
+    g = c.post(
+        "/api/v1/tasks/groups/",
+        data={"name": "Secret Pod", "slug": "secret-pod", "description": ""},
+        content_type="application/json",
+        **auth_o,
+    )
+    gid = g.json()["id"]
+    b = c.post(
+        "/api/v1/tasks/boards/",
+        data={"group": gid, "name": "B1", "preset": "generic_pm"},
+        content_type="application/json",
+        **auth_o,
+    )
+    bid = b.json()["id"]
+    cols = c.get("/api/v1/tasks/columns/", data={"board": bid}, **auth_o).json()
+    t = c.post(
+        "/api/v1/tasks/",
+        data={"board": bid, "column": cols[0]["id"], "title": "X", "description": ""},
+        content_type="application/json",
+        **auth_o,
+    )
+    tid = t.json()["id"]
+
+    assert c.get("/api/v1/tasks/columns/", data={"board": bid}, **auth_x).json() == []
+    assert c.get("/api/v1/tasks/", data={"board": bid}, **auth_x).json() == []
+    assert (
+        c.patch(
+            f"/api/v1/tasks/{tid}/",
+            data={"title": "pwned"},
+            content_type="application/json",
+            **auth_x,
+        ).status_code
+        == 404
+    )
+    assert (
+        c.post(
+            "/api/v1/tasks/boards/",
+            data={"group": gid, "name": "Intruder", "preset": "custom"},
+            content_type="application/json",
+            **auth_x,
+        ).status_code
+        == 403
+    )
+
+
+@pytest.mark.django_db
 def test_media_upload_requires_auth():
     c = Client()
     r = c.post("/api/v1/media/", {})

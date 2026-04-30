@@ -3,7 +3,7 @@
 from django.db.models import Count
 from django.utils import timezone
 
-from .models import WorkBoard, WorkGroup, WorkTask
+from .models import WorkBoard, WorkCounterparty, WorkGroup, WorkTask
 from .serializers import WorkBoardSerializer, WorkGroupSerializer, WorkTaskSerializer
 
 
@@ -48,8 +48,9 @@ def build_work_dashboard_data(user, request=None, *, internal_extra: bool = Fals
         data["internal"] = {
             "open_tasks_estimate": open_tasks,
             "crm_readiness": {
-                "enabled": False,
-                "note": "Задел под лёгкий CRM (контрагенты/контакты) — только штат.",
+                "stub_models_deployed": True,
+                "counterparty_table_count": WorkCounterparty.objects.count(),
+                "note": "Модели WorkCounterparty / WorkContact (задел CRM); связи с задачами — позже.",
             },
         }
 

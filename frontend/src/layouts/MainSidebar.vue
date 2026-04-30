@@ -86,7 +86,7 @@ const mainLinks = computed(() => {
     { to: "/messages", icon: "chat", labelKey: "nav.messages", exact: false },
   ];
   if (auth.isAuthenticated && auth.user && (auth.user.is_staff || auth.user.is_employee)) {
-    links.push({ to: "/work", icon: "work", labelKey: "nav.work", exact: false });
+    links.push({ to: "/work/groups", icon: "work", labelKey: "nav.work", exact: false });
   }
   if (auth.isAuthenticated && auth.user) {
     links.push({ to: "/friends", icon: "people", labelKey: "nav.friends", exact: false });

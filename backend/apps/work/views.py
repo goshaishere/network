@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 
 from apps.common.permissions import IsEmployeeOrStaff
 
+from .board_columns import seed_columns_for_board
 from .dashboard_data import build_work_dashboard_data
 from .models import WorkBoard, WorkColumn, WorkGroup, WorkGroupMembership, WorkTask
 from .serializers import (
@@ -63,36 +64,7 @@ class TasksBoardsView(APIView):
         if not WorkGroupMembership.objects.filter(group=group, user=request.user).exists():
             return Response({"detail": "Нет доступа к группе."}, status=status.HTTP_403_FORBIDDEN)
         board = serializer.save()
-        if board.preset == WorkBoard.Preset.GENERIC_PM:
-            WorkColumn.objects.bulk_create(
-                [
-                    WorkColumn(board=board, title="Planned", semantic="planned", position=0),
-                    WorkColumn(
-                        board=board,
-                        title="In Progress",
-                        semantic="in_progress",
-                        position=1,
-                    ),
-                    WorkColumn(board=board, title="Review", semantic="review", position=2),
-                    WorkColumn(board=board, title="Done", semantic="done", position=3),
-                    WorkColumn(board=board, title="Released", semantic="released", position=4),
-                    WorkColumn(board=board, title="Cancelled", semantic="cancelled", position=5),
-                ]
-            )
-        elif board.preset == WorkBoard.Preset.IT_SDLC:
-            WorkColumn.objects.bulk_create(
-                [
-                    WorkColumn(board=board, title="Backlog", semantic="backlog", position=0),
-                    WorkColumn(
-                        board=board,
-                        title="In Progress",
-                        semantic="in_progress",
-                        position=1,
-                    ),
-                    WorkColumn(board=board, title="Review", semantic="review", position=2),
-                    WorkColumn(board=board, title="Released", semantic="released", position=3),
-                ]
-            )
+        seed_columns_for_board(board)
         return Response(WorkBoardSerializer(board).data, status=status.HTTP_201_CREATED)
 
 

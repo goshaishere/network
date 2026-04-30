@@ -124,6 +124,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import draggable from "vuedraggable";
 import { useQuasar } from "quasar";
 import { useI18n } from "vue-i18n";
@@ -134,6 +135,8 @@ import type { WorkBoard, WorkColumn, WorkGroup, WorkTask } from "@/types/work";
 const { t } = useI18n();
 const $q = useQuasar();
 const auth = useAuthStore();
+const route = useRoute();
+const router = useRouter();
 
 const showInternalSummary = computed(
   () => Boolean(auth.user?.is_employee && auth.user?.employment_kind === "internal")
@@ -190,7 +193,20 @@ watch(
 async function loadGroups() {
   const { data } = await api.get<WorkGroup[]>("/tasks/groups/");
   groups.value = data;
-  selectedGroupId.value = data[0]?.id ?? null;
+}
+
+function applyRouteGroupId() {
+  const raw = route.params.groupId;
+  if (raw === undefined || raw === "") {
+    selectedGroupId.value = groups.value[0]?.id ?? null;
+    return;
+  }
+  const gid = Number(Array.isArray(raw) ? raw[0] : raw);
+  if (Number.isFinite(gid) && groups.value.some((g) => g.id === gid)) {
+    selectedGroupId.value = gid;
+    return;
+  }
+  selectedGroupId.value = groups.value[0]?.id ?? null;
 }
 
 async function loadBoards() {
@@ -222,6 +238,7 @@ async function refreshAll() {
   errorMsg.value = "";
   try {
     await loadGroups();
+    applyRouteGroupId();
     await loadBoards();
     await loadBoardData();
   } catch {
@@ -232,9 +249,10 @@ async function refreshAll() {
 }
 
 async function selectGroup(groupId: number) {
-  selectedGroupId.value = groupId;
-  await loadBoards();
-  await loadBoardData();
+  await router.push({
+    name: "work-group-detail",
+    params: { groupId: String(groupId) },
+  });
 }
 
 async function selectBoard(boardId: number) {
@@ -329,6 +347,25 @@ async function loadInternalSummary() {
 watch(showInternalSummary, (v) => {
   if (v) void loadInternalSummary();
 });
+
+watch(
+  () => route.params.groupId,
+  async () => {
+    if (!route.path.startsWith("/work")) return;
+    loading.value = true;
+    errorMsg.value = "";
+    try {
+      await loadGroups();
+      applyRouteGroupId();
+      await loadBoards();
+      await loadBoardData();
+    } catch {
+      errorMsg.value = t("work.loadError");
+    } finally {
+      loading.value = false;
+    }
+  }
+);
 
 onMounted(async () => {
   await refreshAll();

@@ -58,14 +58,19 @@ class WorkBoard(models.Model):
 
 
 class WorkColumn(models.Model):
+    """Семантика колонок — единый перечень ROLES-AND-TASKS §7.1."""
+
     class Semantic(models.TextChoices):
         PLANNED = "planned", _("Запланировано")
         IN_PROGRESS = "in_progress", _("В работе")
         REVIEW = "review", _("Проверка")
+        PAUSED = "paused", _("На паузе")
         DONE = "done", _("Сделано")
         RELEASED = "released", _("Релиз")
         CANCELLED = "cancelled", _("Отменено")
         BACKLOG = "backlog", _("Бэклог")
+        DEVELOPMENT = "development", _("Разработка")
+        TESTING = "testing", _("Тестирование")
 
     board = models.ForeignKey(WorkBoard, on_delete=models.CASCADE, related_name="columns")
     title = models.CharField(max_length=120)
@@ -74,6 +79,39 @@ class WorkColumn(models.Model):
 
     class Meta:
         ordering = ("position", "id")
+
+
+class WorkCounterparty(models.Model):
+    """Задел под лёгкий CRM (контрагент); не путать с орг.единицами админки."""
+
+    name = models.CharField(_("название"), max_length=200)
+    slug = models.SlugField(_("slug"), max_length=80, blank=True, default="")
+    notes = models.TextField(_("заметки"), blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("name",)
+        verbose_name = _("контрагент (работа)")
+        verbose_name_plural = _("контрагенты (работа)")
+
+
+class WorkContact(models.Model):
+    """Контактное лицо у контрагента (задел CRM)."""
+
+    counterparty = models.ForeignKey(
+        WorkCounterparty,
+        on_delete=models.CASCADE,
+        related_name="contacts",
+    )
+    name = models.CharField(_("имя"), max_length=160)
+    email = models.CharField(_("email"), max_length=254, blank=True)
+    phone = models.CharField(_("телефон"), max_length=40, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("name",)
+        verbose_name = _("контакт (работа)")
+        verbose_name_plural = _("контакты (работа)")
 
 
 class WorkTask(models.Model):

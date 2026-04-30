@@ -35,6 +35,9 @@ def test_internal_work_dashboard_requires_internal():
     assert body.get("scope") == "internal_api"
     assert "internal" in body
     assert "open_tasks_estimate" in body["internal"]
+    crm = body["internal"].get("crm_readiness", {})
+    assert crm.get("stub_models_deployed") is True
+    assert "counterparty_table_count" in crm
 
 
 @pytest.mark.django_db
