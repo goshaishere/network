@@ -22,7 +22,7 @@
 | 8 | Рабочий хаб, канбан | **Частично** | `WorkGroup/Board/Column/Task`, CRUD, **`POST /tasks/columns/reorder/`**, пресеты колонок; UI `/work` с **DnD колонок и задач** (vuedraggable). Нет WS-доски, автоматизаций, расширенных фильтров. **Задел CRM** — по-прежнему опционально вне этого PR. |
 | 9 | Админ-панель | **Частично** | Пользователи + PATCH; **каталог разрешений**, **CRUD групп пользователей** (`/admin/permission-groups/`), **компании и отделы** (`/admin/organizations/`, `/admin/departments/`), привязка пользователя к отделу; `effective_permission_slugs` в **`/auth/me/`**. Нет модерации сообществ в UI. |
 | 10+ | Соцрасширение | **Частично** | **MVP друзей:** модель `FriendRequest`, API `social/friends`, входящие запросы, accept/reject; страница **`/friends`**. Нет ленты «как ВК», вложений в ленту, пушей, полной модерации — это отдельный объём. |
-| 11 | Контейнеризация и CI/CD | **Частично** | `frontend/Dockerfile`, `backend/Dockerfile`, compose; CI docker-build, `deploy.yml`. В `docker-compose.yml` добавлен комментарий про **profiles**; автоматический rollback/orchestrator — вне этого PR. |
+| 11 | Контейнеризация и CI/CD | **Частично** | Образы + `.dockerignore`, nginx (**прокси `/api/`, `/ws/`**), `docker-compose.stack.yml`, CI: validate compose + сборка образов на PR + GHCR `latest`/`sha` на `main`, deploy SSH на stack; k8s/авто-rollback — вне объёма. |
 
 Легенда: **Готово** — критерий фазы в целом выполнен; **Частично** — есть инкремент, критерий нет; **Не начато** — нет содержательной реализации.
 
@@ -85,7 +85,7 @@
 
 ### Фаза 11
 
-- **Сделано:** `frontend/Dockerfile`, `backend/Dockerfile`; CI job `docker-build` c публикацией в GHCR; `deploy.yml` с шагами deploy → migrate → healthcheck; комментарий в compose про профили.
+- **Сделано:** `docker-compose.stack.yml`, `stack.env.example`, nginx reverse-proxy для API/WS, `.dockerignore`, healthcheck `api` в dev compose; CI: `compose-validate`, `docker-verify`, push в GHCR с **lowercase** путём и тегами `latest` + `sha`; `deploy.yml` использует stack-файл и smoke через nginx.
 - **Не сделано:** fully automated rollback и оркестратор уровня k8s/terraform по enterprise-критерию.
 
 ---

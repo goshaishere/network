@@ -122,7 +122,10 @@ jobs:
 
 ## 7. Текущая реализация в репозитории
 
-- CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) — backend lint/test, frontend lint/typecheck/test/build, docker build+push в GHCR на `main`.
-- CD: [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) — ручной deploy по `workflow_dispatch` (SSH), `docker compose up`, миграции и health-check.
-- Контейнеры: [`backend/Dockerfile`](../backend/Dockerfile), [`frontend/Dockerfile`](../frontend/Dockerfile), [`docker-compose.yml`](../docker-compose.yml).
+- CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) — backend lint/test, frontend lint/typecheck/test/build; **`docker compose config`** для `docker-compose.yml` и [`docker-compose.stack.yml`](../docker-compose.stack.yml); **сборка образов без push** на каждом PR/push (проверка Dockerfile); на ветке **`main`** — push в **GHCR** с тегами **`sha-<commit>`** и **`latest`** (имя образа в нижнем регистре, требование GHCR), кэш **GHA**.
+- CD: [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) — ручной deploy по `workflow_dispatch` (SSH): выставляются **`NETWORK_BACKEND_IMAGE`** / **`NETWORK_FRONTEND_IMAGE`** (`ghcr.io/<owner>/<repo>/backend|frontend:<tag>`), **`docker compose -f docker-compose.stack.yml pull && up -d`**, smoke **`GET /api/v1/health/`** через nginx на `:80`. На сервере в `/opt/network` должен лежать репозиторий (или скопированы) **`docker-compose.stack.yml`** и **`.env`** (см. [`stack.env.example`](../stack.env.example)).
+- Локальная разработка: [`docker-compose.yml`](../docker-compose.yml) — bind-mount `backend`, Mailhog, миграции в `command` у `api`.
+- Деплой / stage / prod: [`docker-compose.stack.yml`](../docker-compose.stack.yml) — только образы из registry, том Postgres, healthcheck API (**curl** в образе backend), **без** монтирования кода.
+- Контейнеры: [`backend/Dockerfile`](../backend/Dockerfile) (curl для healthcheck), [`frontend/Dockerfile`](../frontend/Dockerfile) + [`frontend/nginx-default.conf`](../frontend/nginx-default.conf) — SPA **и** reverse-proxy **`/api/`** и **`/ws/`** на сервис `api` (один origin для фронта с `VITE_API_URL=/api/v1` по умолчанию).
+- Игнор контекста сборки: [`backend/.dockerignore`](../backend/.dockerignore), [`frontend/.dockerignore`](../frontend/.dockerignore).
 - Бэкапы БД: [`infra/scripts/backup_db.sh`](../infra/scripts/backup_db.sh), [`infra/scripts/restore_db.sh`](../infra/scripts/restore_db.sh).

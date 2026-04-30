@@ -12,13 +12,15 @@ on:
           - stage
           - production
       image_tag:
-        description: "Image tag (sha-...)"
+        description: "Image tag (e.g. sha-<full_commit_sha> or latest)"
         required: true
         type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -28,12 +30,14 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             set -eu
+            REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+            export NETWORK_BACKEND_IMAGE="${{ env.REGISTRY }}/${REPO_LOWER}/backend:${{ inputs.image_tag }}"
+            export NETWORK_FRONTEND_IMAGE="${{ env.REGISTRY }}/${REPO_LOWER}/frontend:${{ inputs.image_tag }}"
             cd /opt/network
-            export IMAGE_TAG='${{ inputs.image_tag }}'
-            docker compose pull
-            docker compose up -d
-            docker compose exec -T api python manage.py migrate --noinput
-            curl -fsS http://127.0.0.1:8000/api/v1/health/
+            git pull --ff-only || true
+            docker compose -f docker-compose.stack.yml pull
+            docker compose -f docker-compose.stack.yml up -d
+            curl -fsS "http://127.0.0.1/api/v1/health/"
 
   rollback-note:
     runs-on: ubuntu-latest
@@ -41,4 +45,6 @@ jobs:
     if: failure()
     steps:
       - name: Rollback instruction
-        run: echo "Deployment failed. Re-run with previous image tag to rollback."
+        run: |
+          echo "Deployment failed. Re-run workflow with previous image tag (e.g. earlier sha-... or latest)."
+          echo "On server: docker compose -f docker-compose.stack.yml pull && docker compose -f docker-compose.stack.yml up -d"
