@@ -28,6 +28,22 @@ def _is_member(user, community):
     return CommunityMembership.objects.filter(community=community, user=user).exists()
 
 
+class CommunityMineListView(generics.ListAPIView):
+    """Сообщества, в которых состоит текущий пользователь."""
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CommunityListSerializer
+    pagination_class = SmallPagePagination
+
+    def get_queryset(self):
+        return (
+            Community.objects.filter(memberships__user=self.request.user)
+            .annotate(members_count=Count("memberships", distinct=True))
+            .order_by("-created_at")
+            .distinct()
+        )
+
+
 class CommunityListCreateView(generics.ListCreateAPIView):
     queryset = (
         Community.objects.annotate(members_count=Count("memberships", distinct=True))

@@ -7,13 +7,10 @@
 
     <div v-if="auth.isAuthenticated && auth.user" class="q-mt-md q-gutter-sm row items-center flex-wrap">
       <q-btn color="primary" outline :to="{ name: 'dashboard' }" :label="$t('home.openDashboard')" />
-      <q-btn
-        color="primary"
-        flat
-        :to="{ name: 'user-profile', params: { id: String(auth.user.id) } }"
-        :label="$t('home.myProfile')"
-      />
+      <q-btn color="primary" outline :to="{ name: 'feed' }" :label="$t('home.openFeed')" />
+      <q-btn color="primary" flat :to="{ name: 'me' }" :label="$t('home.myProfile')" />
       <q-btn color="secondary" flat :to="{ name: 'settings-profile' }" :label="$t('home.settings')" />
+      <q-btn outline color="primary" :to="{ name: 'communities-mine' }" :label="$t('nav.myCommunities')" />
       <q-btn outline color="primary" :to="{ name: 'communities' }" :label="$t('nav.communities')" />
       <q-btn outline color="primary" :to="{ name: 'messages' }" :label="$t('nav.messages')" />
     </div>
@@ -28,13 +25,7 @@
           <q-card-section class="row items-center no-wrap">
             <div class="text-subtitle2">{{ $t("home.feedWall") }}</div>
             <q-space />
-            <q-btn
-              flat
-              dense
-              color="primary"
-              :to="{ name: 'user-profile', params: { id: String(auth.user.id) } }"
-              :label="$t('home.all')"
-            />
+            <q-btn flat dense color="primary" :to="{ name: 'me' }" :label="$t('home.all')" />
           </q-card-section>
           <q-separator />
           <q-card-section>

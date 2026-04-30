@@ -14,6 +14,24 @@ const mainChildren: RouteRecordRaw[] = [
     meta: { titleKey: "dashboard.title", requiresAuth: true },
   },
   {
+    path: "feed",
+    name: "feed",
+    component: () => import("@/pages/FeedPage.vue"),
+    meta: { titleKey: "nav.feed", requiresAuth: true },
+  },
+  {
+    path: "me",
+    name: "me",
+    component: () => import("@/pages/UserProfilePage.vue"),
+    meta: { titleKey: "nav.myPage", requiresAuth: true },
+  },
+  {
+    path: "communities/mine",
+    name: "communities-mine",
+    component: () => import("@/pages/CommunitiesMinePage.vue"),
+    meta: { titleKey: "nav.myCommunities", requiresAuth: true },
+  },
+  {
     path: "communities",
     name: "communities",
     component: () => import("@/pages/CommunitiesListPage.vue"),

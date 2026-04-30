@@ -5,10 +5,23 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .feed import build_feed_page
 from .models import FriendRequest
 from .serializers import FriendRequestCreateSerializer, FriendRequestSerializer, UserMiniSerializer
 
 User = get_user_model()
+
+
+class FeedView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            offset = int(request.query_params.get("offset", "0"))
+        except ValueError:
+            offset = 0
+        results, next_offset = build_feed_page(request.user, offset=offset)
+        return Response({"results": results, "next_offset": next_offset})
 
 
 class FriendsListView(APIView):

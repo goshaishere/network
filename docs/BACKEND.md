@@ -44,6 +44,7 @@
 | Метод | Путь | Назначение |
 |--------|------|------------|
 | GET/POST | `/api/v1/communities/` | Список / создание |
+| GET | `/api/v1/communities/mine/` | Сообщества, где пользователь — участник (JWT) |
 | GET/PATCH | `/api/v1/communities/{slug}/` | Карточка, настройки (модераторы) |
 | POST | `/api/v1/communities/{slug}/join/` | Вступить |
 | GET/POST | `/api/v1/communities/{slug}/posts/` | Лента сообщества |
@@ -56,6 +57,17 @@
 | POST | `/api/v1/messaging/conversations/` | Создать диалог (или получить существующий 1-1) |
 | GET | `/api/v1/messaging/conversations/{id}/messages/` | История с курсором |
 | POST | `/api/v1/messaging/conversations/{id}/messages/` | Отправить сообщение (запись в БД + broadcast в WS-группу) |
+
+**Социальный контур (друзья и лента):**
+
+| Метод | Путь | Назначение |
+|--------|------|------------|
+| GET | `/api/v1/social/feed/` | Персональная лента: стены друзей (публичный профиль) + посты из сообществ пользователя; пагинация **`?offset=`** |
+| GET | `/api/v1/social/friends/` | Список друзей (принятые заявки) |
+| POST | `/api/v1/social/friend-requests/` | Отправить заявку в друзья |
+| GET | `/api/v1/social/friend-requests/incoming/` | Входящие заявки |
+| POST | `/api/v1/social/friend-requests/{id}/accept/` | Принять |
+| POST | `/api/v1/social/friend-requests/{id}/reject/` | Отклонить |
 
 **WebSocket (не JSON в таблице URL — см. `routing.py`):**
 

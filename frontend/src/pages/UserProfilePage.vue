@@ -111,7 +111,13 @@ const auth = useAuthStore();
 const $q = useQuasar();
 const { t, locale } = useI18n();
 
-const userId = computed(() => Number(route.params.id));
+const userId = computed(() => {
+  if (route.name === "me") {
+    const id = auth.user?.id;
+    return typeof id === "number" && id > 0 ? id : NaN;
+  }
+  return Number(route.params.id);
+});
 
 const loadingProfile = ref(false);
 const profileError = ref("");

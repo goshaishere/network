@@ -4,10 +4,12 @@ from .views import (
     CommunityDetailView,
     CommunityJoinView,
     CommunityListCreateView,
+    CommunityMineListView,
     CommunityPostListCreateView,
 )
 
 urlpatterns = [
+    path("communities/mine/", CommunityMineListView.as_view(), name="communities-mine"),
     path("communities/", CommunityListCreateView.as_view(), name="communities-list"),
     path("communities/<slug:slug>/", CommunityDetailView.as_view(), name="communities-detail"),
     path("communities/<slug:slug>/join/", CommunityJoinView.as_view(), name="communities-join"),

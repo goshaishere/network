@@ -82,25 +82,20 @@ const mainLinks = computed(() => {
   const links = [
     { to: "/", icon: "home", labelKey: "nav.home", exact: true },
     { to: "/dashboard", icon: "dashboard", labelKey: "nav.dashboard", exact: false },
-    { to: "/communities", icon: "groups", labelKey: "nav.communities", exact: false },
-    { to: "/messages", icon: "chat", labelKey: "nav.messages", exact: false },
   ];
+  if (auth.isAuthenticated && auth.user) {
+    links.push({ to: "/feed", icon: "dynamic_feed", labelKey: "nav.feed", exact: false });
+    links.push({ to: "/me", icon: "person", labelKey: "nav.myPage", exact: false });
+    links.push({ to: "/friends", icon: "people", labelKey: "nav.friends", exact: false });
+    links.push({ to: "/messages", icon: "chat", labelKey: "nav.messages", exact: false });
+    links.push({ to: "/communities/mine", icon: "group_work", labelKey: "nav.myCommunities", exact: false });
+  }
+  links.push({ to: "/communities", icon: "groups", labelKey: "nav.communities", exact: false });
   if (auth.isAuthenticated && auth.user && (auth.user.is_staff || auth.user.is_employee)) {
     links.push({ to: "/work/groups", icon: "work", labelKey: "nav.work", exact: false });
   }
-  if (auth.isAuthenticated && auth.user) {
-    links.push({ to: "/friends", icon: "people", labelKey: "nav.friends", exact: false });
-  }
   if (auth.isAuthenticated && auth.user && canAccessInternalRoute(auth.user)) {
     links.push({ to: "/internal", icon: "business", labelKey: "nav.internal", exact: false });
-  }
-  if (auth.isAuthenticated && auth.user) {
-    links.push({
-      to: `/profile/${auth.user.id}`,
-      icon: "person",
-      labelKey: "nav.profile",
-      exact: false,
-    });
   }
   return links;
 });
