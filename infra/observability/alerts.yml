@@ -1,0 +1,19 @@
+# Минимальные правила: цель недоступна или метрика «БД вниз».
+groups:
+  - name: network
+    rules:
+      - alert: NetworkTargetDown
+        expr: up{job="network-api"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus не может снять метрики с Network API"
+
+      - alert: NetworkDatabaseDown
+        expr: network_db_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "network_db_up=0 — проблема с PostgreSQL"

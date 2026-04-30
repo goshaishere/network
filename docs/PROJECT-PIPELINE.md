@@ -64,10 +64,10 @@
 
 ## Фаза 6 — Продакшен и наблюдаемость
 
-- Статика, env prod, `/api/v1/health/`, деплой, бэкапы БД.  
-- Логи, uptime; по готовности Sentry + Prometheus/Grafana — [MONITORING-AND-SUPPORT.md](./MONITORING-AND-SUPPORT.md).
+- [x] Статика, env prod, **`/api/v1/health/`** (БД, Redis, диск), **`/health/live/`**, **`/health/ready/`**, деплой, бэкапы БД.  
+- [x] Логи (`LOG_LEVEL`), uptime; **Sentry** + **Prometheus** (`/metrics/`, токен scrape) + опционально **Grafana** — [MONITORING-AND-SUPPORT.md](./MONITORING-AND-SUPPORT.md), [runbooks/observability.md](./runbooks/observability.md).
 
-**Критерий:** healthcheck и минимальный мониторинг/алерты.
+**Критерий:** healthcheck и минимальный мониторинг/алерты — выполнено.
 
 ---
 

@@ -20,9 +20,11 @@
 
 ## 2. Минимум без тяжёлого стека
 
-- **Healthcheck:** `GET /api/v1/health/` — БД, Redis, диск (лёгкий ping).  
-- **Логи:** структурированный JSON в `stdout` контейнера → сбор **Loki**, **ELK**, или облачный агрегатор.  
-- **Аптайм:** внешний ping (UptimeRobot, Better Stack, healthchecks.io).
+- **Healthcheck:** `GET /api/v1/health/` — БД, Redis (если Channels на Redis), диск, `APP_VERSION`; **`/api/v1/health/live/`** (liveness), **`/api/v1/health/ready/`** (readiness для Docker/K8s).  
+- **Метрики:** `GET /api/v1/metrics/` (Prometheus) — staff или токен `METRICS_SCRAPE_TOKEN`; опционально compose **Prometheus + Alertmanager + Grafana**: см. [`docker-compose.observability.yml`](../docker-compose.observability.yml), [runbooks/observability.md](./runbooks/observability.md).  
+- **Логи:** в production — `LOG_LEVEL`, вывод в stdout ([`production.py`](../backend/config/settings/production.py)) → **Loki**, **ELK** и т.д.  
+- **Sentry:** `SENTRY_DSN` в production.  
+- **Аптайм:** внешний ping (UptimeRobot, Better Stack, healthchecks.io) на `/api/v1/health/` или `/health/ready/`.
 
 ## 3. Метрики приложения (Prometheus)
 

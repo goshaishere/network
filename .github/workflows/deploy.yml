@@ -37,7 +37,7 @@ jobs:
             git pull --ff-only || true
             docker compose -f docker-compose.stack.yml pull
             docker compose -f docker-compose.stack.yml up -d
-            curl -fsS "http://127.0.0.1/api/v1/health/"
+            curl -fsS "http://127.0.0.1/api/v1/health/ready/"
 
   rollback-note:
     runs-on: ubuntu-latest

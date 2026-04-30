@@ -1,0 +1,55 @@
+# Опционально: Prometheus + Alertmanager + Grafana.
+# Запуск вместе с основным compose:
+#   cp infra/observability/bearer.token.example infra/observability/bearer.token
+#   # задать тот же токен в .env: METRICS_SCRAPE_TOKEN=...
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile observability up -d
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    profiles: ["observability"]
+    volumes:
+      - ./infra/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./infra/observability/bearer.token:/etc/prometheus/bearer.token:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    ports:
+      - "9090:9090"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    profiles: ["observability"]
+    volumes:
+      - ./infra/observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    depends_on:
+      - prometheus
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    profiles: ["observability"]
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_started
+
+volumes:
+  prometheus_data:
+  grafana_data:

@@ -8,3 +8,5 @@ channels-redis>=4.2
 daphne>=4.1
 psycopg[binary]>=3.2
 sentry-sdk>=2.0
+prometheus-client>=0.21
+redis>=5.0

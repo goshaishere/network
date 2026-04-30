@@ -98,6 +98,9 @@ AUTH_USER_MODEL = "accounts.User"
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:9000")
 
+# Метрики: scrape Prometheus с заголовком X-Metrics-Token или ?token= (если задано).
+METRICS_SCRAPE_TOKEN = os.environ.get("METRICS_SCRAPE_TOKEN", "").strip()
+
 HCAPTCHA_SECRET_KEY = os.environ.get("HCAPTCHA_SECRET_KEY", "").strip()
 HCAPTCHA_SKIP = os.environ.get("HCAPTCHA_SKIP", "false").lower() in ("1", "true", "yes")
 LOGIN_CAPTCHA_THRESHOLD = int(os.environ.get("LOGIN_CAPTCHA_THRESHOLD", "3"))

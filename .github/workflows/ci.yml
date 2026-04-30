@@ -81,6 +81,11 @@ jobs:
           NETWORK_BACKEND_IMAGE: ghcr.io/example/network/backend:ci
           NETWORK_FRONTEND_IMAGE: ghcr.io/example/network/frontend:ci
         run: docker compose -f docker-compose.stack.yml config --quiet
+      - name: Validate docker-compose.observability.yml (stub bearer.token)
+        run: |
+          echo "ci-token" > infra/observability/bearer.token
+          docker compose -f docker-compose.yml -f docker-compose.observability.yml config --quiet
+          rm -f infra/observability/bearer.token
 
   docker-verify:
     runs-on: ubuntu-latest

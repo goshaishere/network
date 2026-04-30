@@ -17,7 +17,7 @@
 | 3 | Профиль, стена, `/`, дашборд | **Готово** | Лёгкая главная `/` (превью стены и диалогов, быстрые ссылки), `/dashboard` с виджетами и PATCH layout, профиль/стена, настройки `profiles/me`. Drag-and-drop сетка и расширенный каталог виджетов по ролям — позже (см. ROLES §5.2). |
 | 4 | ЛС MVP | **Готово** | REST + WS; фронт: `MessagesListPage`, `ConversationPage`, `useMessagingSocket` (JWT в query, subscribe), Vite proxy `/ws`, входящие без F5; `other_display_name` в списке диалогов. |
 | 5 | Сообщества + доступ к `/work` | **Готово** | Бэк `communities` + фронт `CommunitiesListPage` / `CommunityDetailPage` (лента, join, посты). **`User.is_employee`**, `IsEmployeeOrStaff` на `work/` и tasks stubs; фронт `requiresEmployee`, «Работа» в сайдбаре только staff/employee. |
-| 6 | Прод + наблюдаемость | **Частично** | `health/`; `GET /api/v1/metrics/` (Prometheus text, **только staff**); бэкапы `infra/scripts/`; в prod при `SENTRY_DSN` — инициализация Sentry (`sentry-sdk` в requirements). Нет полноценного Prometheus/Grafana стека и расширенного incident-runbook. |
+| 6 | Прод + наблюдаемость | **Готово** | Расширенный **`/health/`** (БД, Redis, диск, версия), **`/health/live/`**, **`/health/ready/`**; **`/metrics/`** с `prometheus-client` + токен **`METRICS_SCRAPE_TOKEN`** или staff; Sentry + **LOGGING** в prod; опционально **Prometheus + Alertmanager + Grafana** (`docker-compose.observability.yml`, правила в `infra/observability/`); runbook [runbooks/observability.md](./runbooks/observability.md); бэкапы `infra/scripts/`. |
 | 7 | Штат / партнёр | **Частично** | `EmploymentKind`, `IsInternalEmployeeOrStaff`, `/api/v1/internal/status/`; фронт: маршрут **`/internal`**, пункт меню только для **staff или штатного** сотрудника (`employment_kind === internal`), guard `requiresInternal`. Партнёр не видит пункт и не должен получать 200 с internal API. |
 | 8 | Рабочий хаб, канбан | **Частично** | `WorkGroup/Board/Column/Task`, CRUD, **`POST /tasks/columns/reorder/`**, пресеты колонок; UI `/work` с **DnD колонок и задач** (vuedraggable). Нет WS-доски, автоматизаций, расширенных фильтров. **Задел CRM** — по-прежнему опционально вне этого PR. |
 | 9 | Админ-панель | **Частично** | Пользователи + PATCH; **каталог разрешений**, **CRUD групп пользователей** (`/admin/permission-groups/`), **компании и отделы** (`/admin/organizations/`, `/admin/departments/`), привязка пользователя к отделу; `effective_permission_slugs` в **`/auth/me/`**. Нет модерации сообществ в UI. |
@@ -58,10 +58,10 @@
 - **Сделано (фронт):** `CommunitiesListPage`, `CommunityDetailPage`; `WorkHubPage`, meta **`requiresEmployee`**, guard; пункт «Работа» в `MainSidebar` при `is_staff || is_employee`; `AuthUser.is_employee` в store и i18n.
 - **Позже:** тонкая политика «что видит гость vs user» на уровне отдельных экранов сообществ (сейчас — по возможностям API: без токена — только публичные чтения где разрешено DRF).
 
-### Фаза 6 (инкремент)
+### Фаза 6
 
-- **Сделано:** `health/`; `GET /api/v1/metrics/` (staff); опционально Sentry в prod (`SENTRY_DSN`); скрипты `infra/scripts/backup_db.sh` и `infra/scripts/restore_db.sh`.
-- **Не сделано:** полноценный стек Prometheus/Grafana в compose, расширенный runbook.
+- **Сделано:** `GET /api/v1/health/` (БД, Redis при Redis ChannelLayer, диск, `APP_VERSION`), `/health/live/`, `/health/ready/`; `/metrics/` (Prometheus-формат, токен или staff); `METRICS_SCRAPE_TOKEN`, `APP_VERSION`, `DISK_FREE_MIN_MB`; Sentry; `LOGGING` в production; overlay **observability** (Prometheus, Alertmanager, Grafana, bearer scrape), алерты-пример; runbook [runbooks/observability.md](./runbooks/observability.md); healthcheck Docker на **ready**; бэкапы `infra/scripts/`.
+- **Опционально позже:** провиженинг дашбордов Grafana в Git, Loki/ELK, on-call интеграции в Alertmanager.
 
 ### Фаза 7 (инкремент)
 

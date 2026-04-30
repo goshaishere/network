@@ -1,30 +1,35 @@
-from django.contrib.auth import get_user_model
-from django.db import connection
 from django.http import HttpResponse, JsonResponse
 from django.views import View
-from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .permissions import IsInternalEmployeeOrStaff
-
-User = get_user_model()
+from apps.common.health_checks import is_ready, overall_health_status
+from apps.common.metrics_export import render_prometheus_metrics
+from apps.common.permissions import CanScrapeMetrics, IsInternalEmployeeOrStaff
 
 
 class HealthView(View):
-    """GET /api/v1/health/ — проверка процесса и БД."""
+    """GET /api/v1/health/ — БД, Redis (если нужен), диск, версия."""
 
     def get(self, request):
-        db_ok = True
-        try:
-            connection.ensure_connection()
-        except Exception:
-            db_ok = False
-        status = 200 if db_ok else 503
-        return JsonResponse(
-            {"status": "ok" if db_ok else "degraded", "database": "up" if db_ok else "down"},
-            status=status,
-        )
+        payload, code = overall_health_status()
+        return JsonResponse(payload, status=code)
+
+
+class LiveHealthView(View):
+    """GET /api/v1/health/live/ — только «процесс отвечает» (liveness)."""
+
+    def get(self, request):
+        return JsonResponse({"status": "alive"})
+
+
+class ReadyHealthView(View):
+    """GET /api/v1/health/ready/ — готовность принимать трафик (readiness)."""
+
+    def get(self, request):
+        if is_ready():
+            return JsonResponse({"status": "ready"})
+        return JsonResponse({"status": "not_ready"}, status=503)
 
 
 class InternalStatusView(APIView):
@@ -35,15 +40,11 @@ class InternalStatusView(APIView):
 
 
 class PrometheusMetricsView(APIView):
-    """Минимальные метрики в формате Prometheus (для scrape внутри периметра)."""
+    """GET /api/v1/metrics/ — формат Prometheus."""
 
-    permission_classes = [IsAdminUser]
+    authentication_classes = []
+    permission_classes = [CanScrapeMetrics]
 
     def get(self, request):
-        n_users = User.objects.count()
-        body = (
-            "# HELP network_users_total Number of user accounts\n"
-            "# TYPE network_users_total gauge\n"
-            f"network_users_total {n_users}\n"
-        )
-        return HttpResponse(body, content_type="text/plain; version=0.0.4")
+        body, ctype = render_prometheus_metrics()
+        return HttpResponse(body, content_type=ctype)

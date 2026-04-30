@@ -1,0 +1,23 @@
+# Пример для локального стека: docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile observability up
+# Перед запуском: скопируйте bearer.token.example → bearer.token и задайте тот же токен в METRICS_SCRAPE_TOKEN у сервиса api.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+scrape_configs:
+  - job_name: network-api
+    metrics_path: /api/v1/metrics
+    scheme: http
+    static_configs:
+      - targets: ["api:8000"]
+    bearer_token_file: /etc/prometheus/bearer.token
+
+rule_files:
+  - /etc/prometheus/alerts.yml
