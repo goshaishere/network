@@ -9,6 +9,24 @@
       </div>
     </div>
     <q-banner v-if="errorMsg" rounded dense class="bg-negative text-white q-mb-md">{{ errorMsg }}</q-banner>
+    <q-banner v-if="showPartnerNotice" rounded dense class="bg-info text-white q-mb-md">
+      {{ $t("work.partnerInternalNotice") }}
+    </q-banner>
+    <q-card v-if="showInternalSummary" flat bordered class="q-mb-md">
+      <q-card-section class="text-subtitle2">{{ $t("work.internalSummaryTitle") }}</q-card-section>
+      <q-separator />
+      <q-card-section v-if="internalError" class="text-negative">{{ internalError }}</q-card-section>
+      <q-card-section v-else-if="internalSummary">
+        <div class="text-body2">
+          {{ $t("work.internalOpenTasks") }}:
+          <strong>{{ internalSummary.internal?.open_tasks_estimate ?? "—" }}</strong>
+        </div>
+        <div v-if="internalSummary.internal?.crm_readiness" class="text-caption text-grey q-mt-sm">
+          {{ internalSummary.internal.crm_readiness.note }}
+        </div>
+      </q-card-section>
+      <q-linear-progress v-else indeterminate color="primary" class="q-ma-md" />
+    </q-card>
     <q-linear-progress v-if="loading" indeterminate color="primary" class="q-mb-md" />
     <template v-else>
       <div class="row q-col-gutter-md">
@@ -105,15 +123,29 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import draggable from "vuedraggable";
 import { useQuasar } from "quasar";
 import { useI18n } from "vue-i18n";
 import { api } from "@/api/client";
+import { useAuthStore } from "@/stores/auth";
 import type { WorkBoard, WorkColumn, WorkGroup, WorkTask } from "@/types/work";
 
 const { t } = useI18n();
 const $q = useQuasar();
+const auth = useAuthStore();
+
+const showInternalSummary = computed(
+  () => Boolean(auth.user?.is_employee && auth.user?.employment_kind === "internal")
+);
+const showPartnerNotice = computed(
+  () => Boolean(auth.user?.is_employee && auth.user?.employment_kind === "partner")
+);
+
+const internalSummary = ref<{
+  internal?: { open_tasks_estimate?: number; crm_readiness?: { note?: string } };
+} | null>(null);
+const internalError = ref("");
 
 const loading = ref(true);
 const errorMsg = ref("");
@@ -282,8 +314,25 @@ async function onTasksDragEnd() {
   }
 }
 
+async function loadInternalSummary() {
+  internalError.value = "";
+  internalSummary.value = null;
+  if (!showInternalSummary.value) return;
+  try {
+    const { data } = await api.get("/internal/work/dashboard/");
+    internalSummary.value = data;
+  } catch {
+    internalError.value = t("work.internalLoadError");
+  }
+}
+
+watch(showInternalSummary, (v) => {
+  if (v) void loadInternalSummary();
+});
+
 onMounted(async () => {
   await refreshAll();
+  await loadInternalSummary();
 });
 </script>
 

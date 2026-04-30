@@ -21,6 +21,23 @@ def test_internal_endpoint_requires_internal_employee_or_staff():
 
 
 @pytest.mark.django_db
+def test_internal_work_dashboard_requires_internal():
+    c = Client()
+    reg = register_user(c, "partner2@example.com")
+    auth = {"HTTP_AUTHORIZATION": f"Bearer {reg['access']}"}
+    User.objects.filter(pk=reg["user"]["id"]).update(is_employee=True, employment_kind="partner")
+    assert c.get("/api/v1/internal/work/dashboard/", **auth).status_code == 403
+
+    User.objects.filter(pk=reg["user"]["id"]).update(employment_kind="internal")
+    r = c.get("/api/v1/internal/work/dashboard/", **auth)
+    assert r.status_code == 200
+    body = r.json()
+    assert body.get("scope") == "internal_api"
+    assert "internal" in body
+    assert "open_tasks_estimate" in body["internal"]
+
+
+@pytest.mark.django_db
 def test_admin_can_update_employee_kind_and_read_audit():
     c = Client()
     admin_reg = register_user(c, "admin@example.com", password="VerySecret1!")

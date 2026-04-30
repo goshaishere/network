@@ -18,7 +18,7 @@
 | 4 | ЛС MVP | **Готово** | REST + WS; фронт: `MessagesListPage`, `ConversationPage`, `useMessagingSocket` (JWT в query, subscribe), Vite proxy `/ws`, входящие без F5; `other_display_name` в списке диалогов. |
 | 5 | Сообщества + доступ к `/work` | **Готово** | Бэк `communities` + фронт `CommunitiesListPage` / `CommunityDetailPage` (лента, join, посты). **`User.is_employee`**, `IsEmployeeOrStaff` на `work/` и tasks stubs; фронт `requiresEmployee`, «Работа» в сайдбаре только staff/employee. |
 | 6 | Прод + наблюдаемость | **Готово** | Расширенный **`/health/`** (БД, Redis, диск, версия), **`/health/live/`**, **`/health/ready/`**; **`/metrics/`** с `prometheus-client` + токен **`METRICS_SCRAPE_TOKEN`** или staff; Sentry + **LOGGING** в prod; опционально **Prometheus + Alertmanager + Grafana** (`docker-compose.observability.yml`, правила в `infra/observability/`); runbook [runbooks/observability.md](./runbooks/observability.md); бэкапы `infra/scripts/`. |
-| 7 | Штат / партнёр | **Частично** | `EmploymentKind`, `IsInternalEmployeeOrStaff`, `/api/v1/internal/status/`; фронт: маршрут **`/internal`**, пункт меню только для **staff или штатного** сотрудника (`employment_kind === internal`), guard `requiresInternal`. Партнёр не видит пункт и не должен получать 200 с internal API. |
+| 7 | Штат / партнёр | **Готово** | `EmploymentKind`, `IsInternalEmployeeOrStaff`, `/internal/status/`, **`/internal/work/dashboard/`** (расширенный блок только для штата/staff); **`GET /work/dashboard/`** отдаёт `employment_scope` и флаг `internal_extension_available` для штата. Фронт: **`/internal`**, `/work` — внутренняя карточка только у штата, баннер для партнёра; pytest на 403/200 и на поля дашборда. **`Tenant`** — по-прежнему опционально вне MVP. |
 | 8 | Рабочий хаб, канбан | **Частично** | `WorkGroup/Board/Column/Task`, CRUD, **`POST /tasks/columns/reorder/`**, пресеты колонок; UI `/work` с **DnD колонок и задач** (vuedraggable). Нет WS-доски, автоматизаций, расширенных фильтров. **Задел CRM** — по-прежнему опционально вне этого PR. |
 | 9 | Админ-панель | **Частично** | Пользователи + PATCH; **каталог разрешений**, **CRUD групп пользователей** (`/admin/permission-groups/`), **компании и отделы** (`/admin/organizations/`, `/admin/departments/`), привязка пользователя к отделу; `effective_permission_slugs` в **`/auth/me/`**. Нет модерации сообществ в UI. |
 | 10+ | Соцрасширение | **Частично** | **MVP друзей:** модель `FriendRequest`, API `social/friends`, входящие запросы, accept/reject; страница **`/friends`**. Нет ленты «как ВК», вложений в ленту, пушей, полной модерации — это отдельный объём. |
@@ -63,10 +63,10 @@
 - **Сделано:** `GET /api/v1/health/` (БД, Redis при Redis ChannelLayer, диск, `APP_VERSION`), `/health/live/`, `/health/ready/`; `/metrics/` (Prometheus-формат, токен или staff); `METRICS_SCRAPE_TOKEN`, `APP_VERSION`, `DISK_FREE_MIN_MB`; Sentry; `LOGGING` в production; overlay **observability** (Prometheus, Alertmanager, Grafana, bearer scrape), алерты-пример; runbook [runbooks/observability.md](./runbooks/observability.md); healthcheck Docker на **ready**; бэкапы `infra/scripts/`.
 - **Опционально позже:** провиженинг дашбордов Grafana в Git, Loki/ELK, on-call интеграции в Alertmanager.
 
-### Фаза 7 (инкремент)
+### Фаза 7
 
-- **Сделано:** `accounts.User.employment_kind`, permission `IsInternalEmployeeOrStaff`, endpoint `/api/v1/internal/status/`; фронт **`/internal`**, `requiresInternal`, `canAccessInternalRoute`, пункт меню только для штата/staff; Vitest `internalAccess.spec.ts`.
-- **Не сделано:** полный набор internal-only API и виджетов partner vs internal на всех экранах.
+- **Сделано:** `accounts.User.employment_kind`, **`IsInternalEmployeeOrStaff`**, **`GET /api/v1/internal/status/`**, **`GET /api/v1/internal/work/dashboard/`** (`scope: internal_api`, блок `internal` с оценкой открытых задач и заделом CRM); общий **`GET /api/v1/work/dashboard/`** — `employment_scope`, `internal_extension_available` только для штата. Фронт: **`/internal`**, guard `requiresInternal`; на **`/work`** — запрос internal-дэшборда только для штата, поясняющий баннер для партнёра. Тесты: `test_internal_work_dashboard_requires_internal`, `test_work_dashboard_employment_scope_partner_and_internal`, Vitest `internalAccess.spec.ts`.
+- **Опционально позже:** модель **`Tenant`**, дополнительные **`/internal/...`** эндпоинты, единообразные internal-виджеты на остальных экранах.
 
 ### Фаза 8 (инкремент)
 

@@ -137,6 +137,11 @@ export default {
     promptBoardName: "Название доски",
     promptTaskTitle: "Название задачи",
     taskCreated: "Задача создана",
+    internalSummaryTitle: "Внутренние сводки (штат)",
+    internalLoadError: "Не удалось загрузить внутренний дашборд.",
+    internalOpenTasks: "Оценка открытых задач",
+    partnerInternalNotice:
+      "Режим партнёра: расширенные внутренние сводки и раздел «Внутреннее» в меню недоступны. Рабочие группы и задачи — как обычно.",
   },
   console: {
     stubTitle: "Админ-консоль",

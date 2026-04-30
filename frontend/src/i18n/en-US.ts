@@ -136,6 +136,11 @@ export default {
     promptBoardName: "Board name",
     promptTaskTitle: "Task title",
     taskCreated: "Task created",
+    internalSummaryTitle: "Internal summary (staff)",
+    internalLoadError: "Could not load internal dashboard.",
+    internalOpenTasks: "Open tasks (estimate)",
+    partnerInternalNotice:
+      "Partner mode: extended internal summaries and the Internal menu are not available. Work groups and tasks work as usual.",
   },
   console: {
     stubTitle: "Admin console",

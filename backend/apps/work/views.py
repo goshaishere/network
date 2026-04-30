@@ -1,11 +1,11 @@
 from django.db.models import Count
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.common.permissions import IsEmployeeOrStaff
 
+from .dashboard_data import build_work_dashboard_data
 from .models import WorkBoard, WorkColumn, WorkGroup, WorkGroupMembership, WorkTask
 from .serializers import (
     WorkBoardSerializer,
@@ -19,24 +19,7 @@ class WorkDashboardView(APIView):
     permission_classes = [IsEmployeeOrStaff]
 
     def get(self, request):
-        groups_qs = WorkGroup.objects.filter(memberships__user=request.user).distinct()
-        boards_qs = WorkBoard.objects.filter(group__in=groups_qs).distinct()
-        due_qs = (
-            WorkTask.objects.filter(board__in=boards_qs, due_date__gte=timezone.localdate())
-            .order_by("due_date")[:10]
-        )
-        return Response(
-            {
-                "tasks_due": WorkTaskSerializer(due_qs, many=True).data,
-                "groups": WorkGroupSerializer(
-                    groups_qs.annotate(members_count=Count("memberships")),
-                    many=True,
-                    context={"request": request},
-                ).data,
-                "boards": WorkBoardSerializer(boards_qs, many=True).data,
-                "note": "Агрегаты рабочего контура.",
-            }
-        )
+        return Response(build_work_dashboard_data(request.user, request, internal_extra=False))
 
 
 class TasksGroupsView(APIView):

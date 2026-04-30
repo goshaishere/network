@@ -35,6 +35,24 @@ def test_work_dashboard_ok_for_employee_or_staff():
 
 
 @pytest.mark.django_db
+def test_work_dashboard_employment_scope_partner_and_internal():
+    c = Client()
+    p = register_user(c, "scope-p@example.com")
+    User.objects.filter(pk=p["user"]["id"]).update(is_employee=True, employment_kind="partner")
+    rp = c.get("/api/v1/work/dashboard/", HTTP_AUTHORIZATION=f"Bearer {p['access']}")
+    assert rp.status_code == 200
+    assert rp.json().get("employment_scope") == "partner"
+    assert "internal_extension_available" not in rp.json()
+
+    i = register_user(c, "scope-i@example.com")
+    User.objects.filter(pk=i["user"]["id"]).update(is_employee=True, employment_kind="internal")
+    ri = c.get("/api/v1/work/dashboard/", HTTP_AUTHORIZATION=f"Bearer {i['access']}")
+    assert ri.status_code == 200
+    assert ri.json().get("employment_scope") == "internal"
+    assert ri.json().get("internal_extension_available") is True
+
+
+@pytest.mark.django_db
 def test_tasks_stubs_require_employee():
     c = Client()
     reg = register_user(c, "tasks-plain@example.com")

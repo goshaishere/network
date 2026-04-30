@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from apps.common.health_checks import is_ready, overall_health_status
 from apps.common.metrics_export import render_prometheus_metrics
 from apps.common.permissions import CanScrapeMetrics, IsInternalEmployeeOrStaff
+from apps.work.dashboard_data import build_work_dashboard_data
 
 
 class HealthView(View):
@@ -37,6 +38,20 @@ class InternalStatusView(APIView):
 
     def get(self, request):
         return Response({"status": "ok", "scope": "internal", "user_id": request.user.id})
+
+
+class InternalWorkDashboardView(APIView):
+    """
+    Расширенный рабочий дашборд только для штата (internal) или staff.
+    Партнёр получает 403 — не подменяет общий /work/dashboard/.
+    """
+
+    permission_classes = [IsInternalEmployeeOrStaff]
+
+    def get(self, request):
+        data = build_work_dashboard_data(request.user, request, internal_extra=True)
+        data["scope"] = "internal_api"
+        return Response(data)
 
 
 class PrometheusMetricsView(APIView):
