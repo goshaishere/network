@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/v1/", include("apps.media.urls")),
     path("api/v1/", include("apps.work.urls")),
     path("api/v1/", include("apps.console.urls")),
+    path("api/v1/", include("apps.social.urls")),
 ]
 
 if settings.DEBUG:

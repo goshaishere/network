@@ -55,12 +55,14 @@ class LogoutView(TokenBlacklistView):
 
 
 class MeView(generics.RetrieveAPIView):
-    queryset = User.objects.all()
     serializer_class = UserPublicSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        return User.objects.select_related("department").prefetch_related("permission_groups")
+
     def get_object(self):
-        return self.request.user
+        return self.get_queryset().get(pk=self.request.user.pk)
 
 
 class PasswordResetRequestView(APIView):

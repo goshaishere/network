@@ -17,12 +17,12 @@
 | 3 | Профиль, стена, `/`, дашборд | **Готово** | Лёгкая главная `/` (превью стены и диалогов, быстрые ссылки), `/dashboard` с виджетами и PATCH layout, профиль/стена, настройки `profiles/me`. Drag-and-drop сетка и расширенный каталог виджетов по ролям — позже (см. ROLES §5.2). |
 | 4 | ЛС MVP | **Готово** | REST + WS; фронт: `MessagesListPage`, `ConversationPage`, `useMessagingSocket` (JWT в query, subscribe), Vite proxy `/ws`, входящие без F5; `other_display_name` в списке диалогов. |
 | 5 | Сообщества + доступ к `/work` | **Готово** | Бэк `communities` + фронт `CommunitiesListPage` / `CommunityDetailPage` (лента, join, посты). **`User.is_employee`**, `IsEmployeeOrStaff` на `work/` и tasks stubs; фронт `requiresEmployee`, «Работа» в сайдбаре только staff/employee. |
-| 6 | Прод + наблюдаемость | **Частично** | `health/` есть; добавлены backup/restore скрипты. Нет Sentry/Prometheus и полноценного incident-runbook. |
-| 7 | Штат / партнёр | **Частично** | Есть `EmploymentKind`, `IsInternalEmployeeOrStaff`, `/api/v1/internal/status/`; нет полного покрытия internal-модулей и UI-разделения partner/internal. |
-| 8 | Рабочий хаб, канбан | **Частично** | Реализованы `WorkGroup/Board/Column/Task`, CRUD API, пресеты колонок и базовый UI `/work`; нет расширенного канбана (DND/автоматизации/WS-доски). |
-| 9 | Админ-панель | **Частично** | Есть список пользователей и PATCH ролей/`EmploymentKind`, аудит действий (`admin/audit/`), базовая UI-страница; нет оргструктуры (компания/отдел), **групп пользователей** и **разрешений по группам** из админки (см. [PROJECT-PIPELINE.md §фаза 9](./PROJECT-PIPELINE.md)). |
-| 10+ | Соцрасширение | **Не начато** | — |
-| 11 | Контейнеризация и CI/CD | **Частично** | Добавлены `frontend/Dockerfile`, docker-build в CI, отдельный `deploy.yml` (SSH deploy + migrate + healthcheck); rollback пока в виде процедуры, без full automation. |
+| 6 | Прод + наблюдаемость | **Частично** | `health/`; `GET /api/v1/metrics/` (Prometheus text, **только staff**); бэкапы `infra/scripts/`; в prod при `SENTRY_DSN` — инициализация Sentry (`sentry-sdk` в requirements). Нет полноценного Prometheus/Grafana стека и расширенного incident-runbook. |
+| 7 | Штат / партнёр | **Частично** | `EmploymentKind`, `IsInternalEmployeeOrStaff`, `/api/v1/internal/status/`; фронт: маршрут **`/internal`**, пункт меню только для **staff или штатного** сотрудника (`employment_kind === internal`), guard `requiresInternal`. Партнёр не видит пункт и не должен получать 200 с internal API. |
+| 8 | Рабочий хаб, канбан | **Частично** | `WorkGroup/Board/Column/Task`, CRUD, **`POST /tasks/columns/reorder/`**, пресеты колонок; UI `/work` с **DnD колонок и задач** (vuedraggable). Нет WS-доски, автоматизаций, расширенных фильтров. **Задел CRM** — по-прежнему опционально вне этого PR. |
+| 9 | Админ-панель | **Частично** | Пользователи + PATCH; **каталог разрешений**, **CRUD групп пользователей** (`/admin/permission-groups/`), **компании и отделы** (`/admin/organizations/`, `/admin/departments/`), привязка пользователя к отделу; `effective_permission_slugs` в **`/auth/me/`**. Нет модерации сообществ в UI. |
+| 10+ | Соцрасширение | **Частично** | **MVP друзей:** модель `FriendRequest`, API `social/friends`, входящие запросы, accept/reject; страница **`/friends`**. Нет ленты «как ВК», вложений в ленту, пушей, полной модерации — это отдельный объём. |
+| 11 | Контейнеризация и CI/CD | **Частично** | `frontend/Dockerfile`, `backend/Dockerfile`, compose; CI docker-build, `deploy.yml`. В `docker-compose.yml` добавлен комментарий про **profiles**; автоматический rollback/orchestrator — вне этого PR. |
 
 Легенда: **Готово** — критерий фазы в целом выполнен; **Частично** — есть инкремент, критерий нет; **Не начато** — нет содержательной реализации.
 
@@ -60,39 +60,40 @@
 
 ### Фаза 6 (инкремент)
 
-- **Сделано:** `health/` плюс операционные скрипты `infra/scripts/backup_db.sh` и `infra/scripts/restore_db.sh`.
-- **Не сделано:** полноценный мониторинг/алерты (Sentry/Prometheus/Grafana), расширенный runbook.
+- **Сделано:** `health/`; `GET /api/v1/metrics/` (staff); опционально Sentry в prod (`SENTRY_DSN`); скрипты `infra/scripts/backup_db.sh` и `infra/scripts/restore_db.sh`.
+- **Не сделано:** полноценный стек Prometheus/Grafana в compose, расширенный runbook.
 
 ### Фаза 7 (инкремент)
 
-- **Сделано:** `accounts.User.employment_kind`, permission `IsInternalEmployeeOrStaff`, endpoint `/api/v1/internal/status/`.
-- **Не сделано:** полный слой internal API и UI-маршрутов для partner/internal.
+- **Сделано:** `accounts.User.employment_kind`, permission `IsInternalEmployeeOrStaff`, endpoint `/api/v1/internal/status/`; фронт **`/internal`**, `requiresInternal`, `canAccessInternalRoute`, пункт меню только для штата/staff; Vitest `internalAccess.spec.ts`.
+- **Не сделано:** полный набор internal-only API и виджетов partner vs internal на всех экранах.
 
 ### Фаза 8 (инкремент)
 
-- **Сделано:** доменные модели `WorkGroup`, `WorkBoard`, `WorkColumn`, `WorkTask`; API `/tasks/groups|boards|columns|`; создание задач и смена колонки; агрегаты `/work/dashboard/`; базовая страница `/work`.
-- **Не сделано:** DnD-канбан, продвинутые фильтры/поиск, realtime обновления доски.
+- **Сделано:** доменные модели `WorkGroup`, `WorkBoard`, `WorkColumn`, `WorkTask`; API `/tasks/...`, **`POST /tasks/columns/reorder/`**; UI `/work` с DnD (vuedraggable).
+- **Не сделано:** realtime WS на доске, автоматизации, расширенный поиск; **лёгкий CRM** — по желанию отдельным PR.
 
 ### Фазы 10+
 
-- Нет реализации, соответствующей критериям в `PROJECT-PIPELINE.md`.
+- **Сделано (MVP):** `apps.social` — `FriendRequest`, эндпоинты под `api/v1/social/...`, страница **`/friends`**; pytest `tests/test_pipeline_features.py` (друзья).
+- **Не сделано:** персональная лента «как ВК», вложения, пуши, полная модерация.
 
 ### Фаза 9
 
-- **Сделано:** `PATCH /admin/users/` для назначения employee/admin и `employment_kind`, аудит в `admin/audit/`, базовая страница `AdminConsolePage`.
-- **Не сделано:** org-структура и расширенные массовые операции админки; **группы пользователей** (объединение учёток в именованные группы) и **назначение разрешений группам** из `/console` (см. пайплайн, фаза 9).
+- **Сделано:** `PATCH /admin/users/` (в т.ч. `department`, `permission_group_ids`), аудит; каталог и группы: **`/admin/permission-catalog/`**, **`/admin/permission-groups/`**, организации/отделы; **`effective_permission_slugs`** в `UserPublicSerializer` / `GET /auth/me/`; UI консоли — вкладки пользователи / группы.
+- **Не сделано:** модерация сообществ в консоли; тонкая проверка каждого permission slug на всех эндпоинтах (сейчас каталог и группы готовы к поэтапному внедрению).
 
 ### Фаза 11
 
-- **Сделано:** `frontend/Dockerfile`; CI job `docker-build` c публикацией в GHCR; `deploy.yml` с шагами deploy → migrate → healthcheck.
-- **Не сделано:** fully automated rollback и окруженческий оркестратор (k8s/terraform) по критерию enterprise-контура.
+- **Сделано:** `frontend/Dockerfile`, `backend/Dockerfile`; CI job `docker-build` c публикацией в GHCR; `deploy.yml` с шагами deploy → migrate → healthcheck; комментарий в compose про профили.
+- **Не сделано:** fully automated rollback и оркестратор уровня k8s/terraform по enterprise-критерию.
 
 ---
 
 ## Следующий приоритет (рекомендация)
 
-1. **Фаза 8:** `WorkGroup`, доски, канбан, `semantic`, расширение API поверх текущих заглушек.  
-2. **Улучшения фазы 3:** `useDashboardLayout`, DnD-сетка, виджеты по ролям.  
-3. **Улучшения фазы 4:** индикатор «печатает…», доставка офлайн (переподключение WS при refresh — уже учтено в фазе 4 в таблице выше).
+1. Включить проверки **permission slugs** на критичных API (после каталога групп).  
+2. Фаза 8: WS на доске, фильтры, опционально CRM-модели.  
+3. Фаза 10+: лента друзей, вложения, уведомления.
 
 Порядок можно менять по продукту; этот файл — только фиксация **факта**, не планирование.

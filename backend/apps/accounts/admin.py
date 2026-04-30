@@ -31,6 +31,7 @@ class UserAdmin(DjangoUserAdmin):
                     "is_staff",
                     "is_employee",
                     "employment_kind",
+                    "department",
                     "is_superuser",
                     "groups",
                     "user_permissions",

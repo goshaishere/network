@@ -153,6 +153,46 @@ class TasksListCreateView(APIView):
         return Response(WorkTaskSerializer(task).data, status=status.HTTP_201_CREATED)
 
 
+class TasksColumnsReorderView(APIView):
+    """POST { board, order: [column_id, ...] } — позиции колонок на доске."""
+
+    permission_classes = [IsEmployeeOrStaff]
+
+    def post(self, request):
+        board_id = request.data.get("board")
+        order = request.data.get("order")
+        if board_id is None or not isinstance(order, list) or not order:
+            return Response(
+                {"detail": "Нужны поля board и order (непустой список id колонок)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        board = (
+            WorkBoard.objects.filter(
+                pk=board_id,
+                group__memberships__user=request.user,
+            )
+            .distinct()
+            .first()
+        )
+        if board is None:
+            return Response({"detail": "Доска не найдена."}, status=status.HTTP_404_NOT_FOUND)
+        cols = list(WorkColumn.objects.filter(board=board))
+        col_ids = {c.id for c in cols}
+        try:
+            order_ids = [int(x) for x in order]
+        except (TypeError, ValueError):
+            return Response({"detail": "order должен быть списком чисел."}, status=status.HTTP_400_BAD_REQUEST)
+        if set(order_ids) != col_ids:
+            return Response(
+                {"detail": "Набор id колонок должен совпадать с колонками доски."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        for pos, col_id in enumerate(order_ids):
+            WorkColumn.objects.filter(pk=col_id, board=board).update(position=pos)
+        ordered = WorkColumn.objects.filter(board=board).order_by("position", "id")
+        return Response(WorkColumnSerializer(ordered, many=True).data)
+
+
 class TasksDetailView(APIView):
     permission_classes = [IsEmployeeOrStaff]
 

@@ -68,6 +68,7 @@
 import { computed, watch } from "vue";
 import { useQuasar } from "quasar";
 import { useRoute, useRouter } from "vue-router";
+import { canAccessInternalRoute } from "@/router/internalAccess";
 import { useAuthStore } from "@/stores/auth";
 
 const open = defineModel<boolean>({ required: true });
@@ -86,6 +87,12 @@ const mainLinks = computed(() => {
   ];
   if (auth.isAuthenticated && auth.user && (auth.user.is_staff || auth.user.is_employee)) {
     links.push({ to: "/work", icon: "work", labelKey: "nav.work", exact: false });
+  }
+  if (auth.isAuthenticated && auth.user) {
+    links.push({ to: "/friends", icon: "people", labelKey: "nav.friends", exact: false });
+  }
+  if (auth.isAuthenticated && auth.user && canAccessInternalRoute(auth.user)) {
+    links.push({ to: "/internal", icon: "business", labelKey: "nav.internal", exact: false });
   }
   if (auth.isAuthenticated && auth.user) {
     links.push({

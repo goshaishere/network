@@ -39,26 +39,61 @@
             </div>
           </div>
           <q-list bordered separator class="q-mb-md">
-            <q-item v-for="b in boards" :key="b.id" clickable :active="selectedBoardId === b.id" @click="selectBoard(b.id)">
+            <q-item
+              v-for="b in boards"
+              :key="b.id"
+              clickable
+              :active="selectedBoardId === b.id"
+              @click="selectBoard(b.id)"
+            >
               <q-item-section>{{ b.name }}</q-item-section>
               <q-item-section side>{{ b.preset }}</q-item-section>
             </q-item>
           </q-list>
-          <div class="row q-col-gutter-sm">
-            <div v-for="col in columns" :key="col.id" class="col-12 col-md-4">
-              <q-card flat bordered>
-                <q-card-section class="text-subtitle2">{{ col.title }}</q-card-section>
-                <q-separator />
-                <q-list dense>
-                  <q-item v-for="task in tasksByColumn(col.id)" :key="task.id">
-                    <q-item-section>
-                      <q-item-label>{{ task.title }}</q-item-label>
-                      <q-item-label caption>{{ task.due_date || "-" }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-card>
-            </div>
+
+          <div v-if="selectedBoardId && columnsSorted.length" class="kanban-scroll">
+            <draggable
+              v-model="columnsSorted"
+              item-key="id"
+              class="row no-wrap q-col-gutter-sm"
+              handle=".column-drag-handle"
+              @end="onColumnsDragEnd"
+            >
+              <template #item="{ element: col }">
+                <div class="kanban-column">
+                  <q-card flat bordered class="full-height">
+                    <q-card-section class="row items-center q-pb-sm">
+                      <q-icon
+                        name="drag_indicator"
+                        class="column-drag-handle cursor-move q-mr-sm"
+                        size="sm"
+                      />
+                      <span class="text-subtitle2">{{ col.title }}</span>
+                    </q-card-section>
+                    <q-separator />
+                    <q-card-section class="q-pt-sm">
+                      <draggable
+                        :model-value="taskLists[col.id] || []"
+                        item-key="id"
+                        group="board-tasks"
+                        class="column-tasks"
+                        @update:model-value="(v) => setTaskList(col.id, v)"
+                        @end="onTasksDragEnd"
+                      >
+                        <template #item="{ element: task }">
+                          <q-item dense class="rounded-borders q-mb-xs bg-grey-9">
+                            <q-item-section>
+                              <q-item-label>{{ task.title }}</q-item-label>
+                              <q-item-label caption>{{ task.due_date || "—" }}</q-item-label>
+                            </q-item-section>
+                          </q-item>
+                        </template>
+                      </draggable>
+                    </q-card-section>
+                  </q-card>
+                </div>
+              </template>
+            </draggable>
           </div>
           <q-btn v-if="selectedBoardId" class="q-mt-md" dense outline color="primary" @click="createTask">
             {{ $t("work.newTask") }}
@@ -70,7 +105,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
+import draggable from "vuedraggable";
 import { useQuasar } from "quasar";
 import { useI18n } from "vue-i18n";
 import { api } from "@/api/client";
@@ -84,13 +120,40 @@ const errorMsg = ref("");
 const groups = ref<WorkGroup[]>([]);
 const boards = ref<WorkBoard[]>([]);
 const columns = ref<WorkColumn[]>([]);
+const columnsSorted = ref<WorkColumn[]>([]);
 const tasks = ref<WorkTask[]>([]);
+const taskLists = ref<Record<number, WorkTask[]>>({});
 const selectedGroupId = ref<number | null>(null);
 const selectedBoardId = ref<number | null>(null);
 
-function tasksByColumn(columnId: number) {
-  return tasks.value.filter((x) => x.column === columnId);
+function rebuildTaskLists() {
+  const m: Record<number, WorkTask[]> = {};
+  for (const col of columns.value) {
+    m[col.id] = [...tasks.value.filter((x) => x.column === col.id)].sort(
+      (a, b) => a.position - b.position || a.id - b.id
+    );
+  }
+  taskLists.value = m;
 }
+
+function setTaskList(columnId: number, list: WorkTask[]) {
+  taskLists.value = { ...taskLists.value, [columnId]: list };
+}
+
+watch(
+  () => columns.value,
+  () => {
+    columnsSorted.value = [...columns.value].sort((a, b) => a.position - b.position || a.id - b.id);
+    rebuildTaskLists();
+  },
+  { deep: true }
+);
+
+watch(
+  () => tasks.value,
+  () => rebuildTaskLists(),
+  { deep: true }
+);
 
 async function loadGroups() {
   const { data } = await api.get<WorkGroup[]>("/tasks/groups/");
@@ -150,7 +213,10 @@ async function selectBoard(boardId: number) {
 async function createGroup() {
   const name = window.prompt(t("work.promptGroupName"));
   if (!name) return;
-  const slug = name.toLowerCase().replaceAll(/\s+/g, "-").replaceAll(/[^a-z0-9-]/g, "");
+  const slug = name
+    .toLowerCase()
+    .replaceAll(/\s+/g, "-")
+    .replaceAll(/[^a-z0-9-]/g, "");
   await api.post("/tasks/groups/", { name, slug, description: "" });
   await refreshAll();
 }
@@ -180,7 +246,57 @@ async function createTask() {
   $q.notify({ type: "positive", message: t("work.taskCreated") });
 }
 
+async function onColumnsDragEnd() {
+  if (!selectedBoardId.value || columnsSorted.value.length === 0) return;
+  const order = columnsSorted.value.map((c) => c.id);
+  try {
+    await api.post("/tasks/columns/reorder/", { board: selectedBoardId.value, order });
+    await loadBoardData();
+  } catch {
+    errorMsg.value = t("work.loadError");
+  }
+}
+
+async function onTasksDragEnd() {
+  if (!selectedBoardId.value) return;
+  try {
+    const byId = new Map(tasks.value.map((x) => [x.id, x]));
+    const updates: Promise<unknown>[] = [];
+    for (const col of columnsSorted.value) {
+      const list = taskLists.value[col.id] || [];
+      let pos = 0;
+      for (const tsk of list) {
+        const prev = byId.get(tsk.id);
+        if (!prev) continue;
+        if (prev.column !== col.id || prev.position !== pos) {
+          updates.push(api.patch(`/tasks/${tsk.id}/`, { column: col.id, position: pos }));
+        }
+        pos += 1;
+      }
+    }
+    await Promise.all(updates);
+    await loadBoardData();
+  } catch {
+    errorMsg.value = t("work.loadError");
+    await loadBoardData();
+  }
+}
+
 onMounted(async () => {
   await refreshAll();
 });
 </script>
+
+<style scoped>
+.kanban-scroll {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.kanban-column {
+  flex: 0 0 280px;
+  max-width: 320px;
+}
+.column-tasks {
+  min-height: 40px;
+}
+</style>

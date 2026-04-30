@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "apps.media.apps.MediaConfig",
     "apps.work.apps.WorkConfig",
     "apps.console.apps.ConsoleConfig",
+    "apps.social.apps.SocialConfig",
     "apps.common.apps.CommonConfig",
 ]
 

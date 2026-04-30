@@ -13,10 +13,26 @@ User = get_user_model()
 
 
 class UserPublicSerializer(serializers.ModelSerializer):
+    effective_permission_slugs = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ("id", "email", "display_name", "is_staff", "is_employee", "employment_kind")
+        fields = (
+            "id",
+            "email",
+            "display_name",
+            "is_staff",
+            "is_employee",
+            "employment_kind",
+            "department",
+            "effective_permission_slugs",
+        )
         read_only_fields = fields
+
+    def get_effective_permission_slugs(self, obj):
+        from apps.console.services.permissions import get_effective_permission_slugs
+
+        return sorted(get_effective_permission_slugs(obj))
 
 
 class RegisterSerializer(serializers.ModelSerializer):

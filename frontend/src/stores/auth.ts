@@ -13,6 +13,8 @@ export interface AuthUser {
   is_staff: boolean;
   is_employee: boolean;
   employment_kind: "" | "internal" | "partner";
+  department?: number | null;
+  effective_permission_slugs?: string[];
 }
 
 export const useAuthStore = defineStore("auth", () => {

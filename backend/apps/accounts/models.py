@@ -26,6 +26,14 @@ class User(AbstractUser):
         default="",
         help_text=_("internal/partner для сотрудников; пусто для обычных пользователей."),
     )
+    department = models.ForeignKey(
+        "console.Department",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="users",
+        verbose_name=_("отдел"),
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS: list[str] = []

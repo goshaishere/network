@@ -1,3 +1,6 @@
+# Dev-стек по умолчанию: `docker compose up`.
+# Профили (stage/prod-only сервисы) можно добавлять через `profiles:` у сервисов и `docker compose --profile <name> up`.
+
 services:
   db:
     image: postgres:18-alpine

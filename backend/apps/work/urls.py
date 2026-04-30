@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     TasksBoardsView,
+    TasksColumnsReorderView,
     TasksColumnsView,
     TasksDetailView,
     TasksGroupsView,
@@ -13,6 +14,7 @@ urlpatterns = [
     path("work/dashboard/", WorkDashboardView.as_view(), name="work-dashboard"),
     path("tasks/groups/", TasksGroupsView.as_view(), name="tasks-groups"),
     path("tasks/boards/", TasksBoardsView.as_view(), name="tasks-boards"),
+    path("tasks/columns/reorder/", TasksColumnsReorderView.as_view(), name="tasks-columns-reorder"),
     path("tasks/columns/", TasksColumnsView.as_view(), name="tasks-columns"),
     path("tasks/", TasksListCreateView.as_view(), name="tasks"),
     path("tasks/<int:pk>/", TasksDetailView.as_view(), name="task-detail"),

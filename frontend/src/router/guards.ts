@@ -1,5 +1,6 @@
 import type { Router } from "vue-router";
 import { i18n } from "@/boot/i18n";
+import { canAccessInternalRoute } from "@/router/internalAccess";
 import { useAuthStore } from "@/stores/auth";
 
 export function setupRouterGuards(_router: Router) {
@@ -18,6 +19,7 @@ export function setupRouterGuards(_router: Router) {
     const guestOnly = to.matched.some((r) => r.meta.guestOnly);
     const requiresStaff = to.matched.some((r) => r.meta.requiresStaff);
     const requiresEmployee = to.matched.some((r) => r.meta.requiresEmployee);
+    const requiresInternal = to.matched.some((r) => r.meta.requiresInternal);
 
     if (requiresAuth && !auth.isAuthenticated) {
       next({ name: "auth-login", query: { redirect: to.fullPath } });
@@ -37,6 +39,13 @@ export function setupRouterGuards(_router: Router) {
     if (requiresEmployee && auth.isAuthenticated) {
       const u = auth.user;
       if (!u?.is_staff && !u?.is_employee) {
+        next({ name: "home" });
+        return;
+      }
+    }
+
+    if (requiresInternal && auth.isAuthenticated) {
+      if (!canAccessInternalRoute(auth.user)) {
         next({ name: "home" });
         return;
       }

@@ -44,6 +44,18 @@ const mainChildren: RouteRecordRaw[] = [
     meta: { titleKey: "work.title", requiresAuth: true, requiresEmployee: true },
   },
   {
+    path: "internal",
+    name: "internal",
+    component: () => import("@/pages/InternalHubPage.vue"),
+    meta: { titleKey: "internal.title", requiresAuth: true, requiresInternal: true },
+  },
+  {
+    path: "friends",
+    name: "friends",
+    component: () => import("@/pages/FriendsPage.vue"),
+    meta: { titleKey: "friends.title", requiresAuth: true },
+  },
+  {
     path: "console",
     name: "console",
     component: () => import("@/pages/AdminConsolePage.vue"),
