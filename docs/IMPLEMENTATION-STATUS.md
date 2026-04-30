@@ -22,7 +22,7 @@
 | 8 | Рабочий хаб, канбан | **Готово** | Членство **`WorkGroupMembership`** на всех read/write **`/tasks/...`**; пресеты **§7.2** (`generic_pm`, `it_sdlc`, `custom`); **`POST /tasks/columns/reorder/`**, DnD задач через **PATCH**; **`/work/groups`**, **`/work/groups/:groupId`**; задел CRM: **`WorkCounterparty`**, **`WorkContact`**. **Нет:** WS-доски, автоматизаций, расширенных фильтров — отдельный объём. |
 | 9 | Админ-панель | **Готово** | Консоль: пользователи (отдел, группы прав, эффективные права), группы (**редактирование участников и кодов**, удаление), оргструктура, **модерация сообществ** (список, открытость, посты, удаление поста). API: **`/admin/communities/...`**, аудит. **Позже:** enforcement permission slugs на каждом маршруте. |
 | 10+ | Соцрасширение | **Частично** | Лента, друзья, **`/me`**, **`/communities/mine`**. **Вложения:** `uploaded_file` у постов стены/сообщества, превью в ленте и на страницах; **`hidden_from_feed`** и слияние потоков в **`feed.py`**. **Жалобы:** `POST /api/v1/social/reports/`, **`ContentReport`**, admin. **Нет:** push, полноценный разбор жалоб в продукте. |
-| 11 | Контейнеризация и CI/CD | **Частично** | Образы + `.dockerignore`, nginx (**прокси `/api/`, `/ws/`**), `docker-compose.stack.yml`, CI: validate compose + сборка образов на PR + GHCR `latest`/`sha` на `main`, deploy SSH на stack; k8s/авто-rollback — вне объёма. |
+| 11 | Контейнеризация и CI/CD | **Готово** | Multi-stage Dockerfile (backend/frontend), stack compose с healthchecks/startup-order, CI: lint/test/build + compose validate + docker verify + publish в GHCR; deploy: pull+up+migrate+smoke-check и авто-rollback на предыдущие образы; добавлен secrets scan (gitleaks). |
 
 Легенда: **Готово** — критерий фазы в целом выполнен; **Частично** — есть инкремент, критерий нет; **Не начато** — нет содержательной реализации.
 
@@ -85,8 +85,8 @@
 
 ### Фаза 11
 
-- **Сделано:** `docker-compose.stack.yml`, `stack.env.example`, nginx reverse-proxy для API/WS, `.dockerignore`, healthcheck `api` в dev compose; CI: `compose-validate`, `docker-verify`, push в GHCR с **lowercase** путём и тегами `latest` + `sha`; `deploy.yml` использует stack-файл и smoke через nginx.
-- **Не сделано:** fully automated rollback и оркестратор уровня k8s/terraform по enterprise-критерию.
+- **Сделано:** `docker-compose.stack.yml`, `stack.env.example`, nginx reverse-proxy для API/WS, `.dockerignore`; backend Dockerfile переведён на multi-stage (builder/runtime, non-root), frontend — multi-stage (build + nginx); CI: `compose-validate`, `docker-verify`, push в GHCR с **lowercase** путём и тегами `latest` + `sha`, плюс `secrets-scan` (gitleaks); `deploy.yml` использует stack-файл, делает smoke-check и при ошибке выполняет авто-rollback на предыдущие образы.
+- **Вне объёма:** оркестратор уровня k8s/terraform (enterprise-сценарий).
 
 ---
 

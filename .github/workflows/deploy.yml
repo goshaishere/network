@@ -29,22 +29,28 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            set -eu
+            set -euo pipefail
             REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
             export NETWORK_BACKEND_IMAGE="${{ env.REGISTRY }}/${REPO_LOWER}/backend:${{ inputs.image_tag }}"
             export NETWORK_FRONTEND_IMAGE="${{ env.REGISTRY }}/${REPO_LOWER}/frontend:${{ inputs.image_tag }}"
             cd /opt/network
             git pull --ff-only || true
+            PREV_BACKEND_IMAGE=$(docker compose -f docker-compose.stack.yml config | awk '/image: .*\/backend:/{print $2; exit}')
+            PREV_FRONTEND_IMAGE=$(docker compose -f docker-compose.stack.yml config | awk '/image: .*\/frontend:/{print $2; exit}')
+
+            rollback() {
+              echo "Deploy failed, rolling back to previous images..."
+              if [ -n "${PREV_BACKEND_IMAGE:-}" ]; then
+                export NETWORK_BACKEND_IMAGE="$PREV_BACKEND_IMAGE"
+              fi
+              if [ -n "${PREV_FRONTEND_IMAGE:-}" ]; then
+                export NETWORK_FRONTEND_IMAGE="$PREV_FRONTEND_IMAGE"
+              fi
+              docker compose -f docker-compose.stack.yml pull
+              docker compose -f docker-compose.stack.yml up -d
+            }
+            trap rollback ERR
+
             docker compose -f docker-compose.stack.yml pull
             docker compose -f docker-compose.stack.yml up -d
             curl -fsS "http://127.0.0.1/api/v1/health/ready/"
-
-  rollback-note:
-    runs-on: ubuntu-latest
-    needs: [deploy]
-    if: failure()
-    steps:
-      - name: Rollback instruction
-        run: |
-          echo "Deployment failed. Re-run workflow with previous image tag (e.g. earlier sha-... or latest)."
-          echo "On server: docker compose -f docker-compose.stack.yml pull && docker compose -f docker-compose.stack.yml up -d"
