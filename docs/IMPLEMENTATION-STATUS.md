@@ -20,7 +20,7 @@
 | 6 | Прод + наблюдаемость | **Готово** | Расширенный **`/health/`** (БД, Redis, диск, версия), **`/health/live/`**, **`/health/ready/`**; **`/metrics/`** с `prometheus-client` + токен **`METRICS_SCRAPE_TOKEN`** или staff; Sentry + **LOGGING** в prod; опционально **Prometheus + Alertmanager + Grafana** (`docker-compose.observability.yml`, правила в `infra/observability/`); runbook [runbooks/observability.md](./runbooks/observability.md); бэкапы `infra/scripts/`. |
 | 7 | Штат / партнёр | **Готово** | `EmploymentKind`, `IsInternalEmployeeOrStaff`, `/internal/status/`, **`/internal/work/dashboard/`** (расширенный блок только для штата/staff); **`GET /work/dashboard/`** отдаёт `employment_scope` и флаг `internal_extension_available` для штата. Фронт: **`/internal`**, `/work` — внутренняя карточка только у штата, баннер для партнёра; pytest на 403/200 и на поля дашборда. **`Tenant`** — по-прежнему опционально вне MVP. |
 | 8 | Рабочий хаб, канбан | **Готово** | Членство **`WorkGroupMembership`** на всех read/write **`/tasks/...`**; пресеты **§7.2** (`generic_pm`, `it_sdlc`, `custom`); **`POST /tasks/columns/reorder/`**, DnD задач через **PATCH**; **`/work/groups`**, **`/work/groups/:groupId`**; задел CRM: **`WorkCounterparty`**, **`WorkContact`**. **Нет:** WS-доски, автоматизаций, расширенных фильтров — отдельный объём. |
-| 9 | Админ-панель | **Частично** | Пользователи + PATCH; **каталог разрешений**, **CRUD групп пользователей** (`/admin/permission-groups/`), **компании и отделы** (`/admin/organizations/`, `/admin/departments/`), привязка пользователя к отделу; `effective_permission_slugs` в **`/auth/me/`**. Нет модерации сообществ в UI. |
+| 9 | Админ-панель | **Готово** | Консоль: пользователи (отдел, группы прав, эффективные права), группы (**редактирование участников и кодов**, удаление), оргструктура, **модерация сообществ** (список, открытость, посты, удаление поста). API: **`/admin/communities/...`**, аудит. **Позже:** enforcement permission slugs на каждом маршруте. |
 | 10+ | Соцрасширение | **Частично** | **MVP друзей:** модель `FriendRequest`, API `social/friends`, входящие запросы, accept/reject; страница **`/friends`**. Нет ленты «как ВК», вложений в ленту, пушей, полной модерации — это отдельный объём. |
 | 11 | Контейнеризация и CI/CD | **Частично** | Образы + `.dockerignore`, nginx (**прокси `/api/`, `/ws/`**), `docker-compose.stack.yml`, CI: validate compose + сборка образов на PR + GHCR `latest`/`sha` на `main`, deploy SSH на stack; k8s/авто-rollback — вне объёма. |
 
@@ -80,8 +80,8 @@
 
 ### Фаза 9
 
-- **Сделано:** `PATCH /admin/users/` (в т.ч. `department`, `permission_group_ids`), аудит; каталог и группы: **`/admin/permission-catalog/`**, **`/admin/permission-groups/`**, организации/отделы; **`effective_permission_slugs`** в `UserPublicSerializer` / `GET /auth/me/`; UI консоли — вкладки пользователи / группы.
-- **Не сделано:** модерация сообществ в консоли; тонкая проверка каждого permission slug на всех эндпоинтах (сейчас каталог и группы готовы к поэтапному внедрению).
+- **Сделано:** `GET/PATCH /admin/users/` (в т.ч. `department`, `permission_group_ids`; в **`GET`** список id групп для формы), аудит; **`/admin/permission-catalog/`**, **`/admin/permission-groups/`** (+ деталь **PATCH/DELETE**), организации/отделы; **`GET/PATCH /admin/communities/`**, **`GET /admin/communities/<id>/posts/`**, **`DELETE /admin/communities/posts/<id>/`**; slug **`console.moderate_communities`** в каталоге (для будущего RBAC). UI **`/console`**: вкладки пользователи, группы и права, компании/отделы, сообщества.
+- **Позже:** обязательные проверки **`HasPerm`** по slug на бизнес-API (сейчас консоль — **`IsAdminUser`**).
 
 ### Фаза 11
 

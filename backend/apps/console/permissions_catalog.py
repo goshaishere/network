@@ -6,6 +6,7 @@ PERMISSION_CATALOG: list[dict[str, str]] = [
     {"slug": "console.view_audit", "name": "Просмотр журнала аудита"},
     {"slug": "console.manage_groups", "name": "Управление группами и разрешениями"},
     {"slug": "console.manage_org", "name": "Управление компаниями и отделами"},
+    {"slug": "console.moderate_communities", "name": "Модерация сообществ из консоли"},
     {"slug": "internal.tools", "name": "Доступ к внутренним инструментам (по политике продукта)"},
     {"slug": "work.advanced", "name": "Расширенные возможности рабочего контура"},
 ]

@@ -24,6 +24,7 @@ def test_admin_permission_groups_and_catalog():
     assert cat.status_code == 200
     assert isinstance(cat.json(), list)
     assert any(x.get("slug") == "console.view_users" for x in cat.json())
+    assert any(x.get("slug") == "console.moderate_communities" for x in cat.json())
 
     create = c.post(
         "/api/v1/admin/permission-groups/",

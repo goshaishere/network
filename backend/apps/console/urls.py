@@ -2,6 +2,10 @@ from django.urls import path
 
 from .views import (
     AdminAuditLogsView,
+    AdminCommunitiesListView,
+    AdminCommunityDetailView,
+    AdminCommunityPostDeleteView,
+    AdminCommunityPostsView,
     AdminDepartmentsView,
     AdminOrganizationsView,
     AdminPermissionCatalogView,
@@ -39,5 +43,21 @@ urlpatterns = [
         "admin/departments/",
         AdminDepartmentsView.as_view(),
         name="admin-departments",
+    ),
+    path("admin/communities/", AdminCommunitiesListView.as_view(), name="admin-communities"),
+    path(
+        "admin/communities/posts/<int:pk>/",
+        AdminCommunityPostDeleteView.as_view(),
+        name="admin-community-post-delete",
+    ),
+    path(
+        "admin/communities/<int:pk>/posts/",
+        AdminCommunityPostsView.as_view(),
+        name="admin-community-posts",
+    ),
+    path(
+        "admin/communities/<int:pk>/",
+        AdminCommunityDetailView.as_view(),
+        name="admin-community-detail",
     ),
 ]

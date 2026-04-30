@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from apps.console.permissions_catalog import ALL_PERMISSION_SLUGS, PERMISSION_CATALOG
+from apps.communities.models import Community, CommunityPost
+from apps.console.permissions_catalog import ALL_PERMISSION_SLUGS
 from apps.console.services.permissions import get_effective_permission_slugs
 
 from .models import AdminAuditLog, Department, Organization, UserPermissionGroup
@@ -43,6 +44,11 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
     def get_effective_permission_slugs(self, obj):
         return sorted(get_effective_permission_slugs(obj))
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["permission_group_ids"] = list(instance.permission_groups.values_list("id", flat=True))
+        return data
 
     def validate(self, attrs):
         is_employee = attrs.get("is_employee", getattr(self.instance, "is_employee", False))
@@ -154,3 +160,31 @@ class DepartmentSerializer(serializers.ModelSerializer):
         model = Department
         fields = ("id", "organization", "parent", "name")
         read_only_fields = ("id",)
+
+
+class AdminCommunitySerializer(serializers.ModelSerializer):
+    members_count = serializers.IntegerField(read_only=True)
+    posts_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Community
+        fields = (
+            "id",
+            "name",
+            "slug",
+            "description",
+            "is_open",
+            "created_at",
+            "members_count",
+            "posts_count",
+        )
+        read_only_fields = ("id", "slug", "created_at", "members_count", "posts_count")
+
+
+class AdminCommunityPostSerializer(serializers.ModelSerializer):
+    author_email = serializers.EmailField(source="author.email", read_only=True)
+
+    class Meta:
+        model = CommunityPost
+        fields = ("id", "community", "author", "author_email", "body", "created_at")
+        read_only_fields = ("id", "community", "author", "author_email", "body", "created_at")

@@ -165,5 +165,5 @@
 - **Штат vs партнёр:** permission **`IsInternalEmployeeOrStaff`** на префикс **`/api/v1/internal/...`** (только `EmploymentKind.internal` либо staff); партнёр — без internal-модулей.  
 - **`GET /api/v1/work/dashboard/`** — агрегаты для `/work`, поля **`employment_scope`**, при штате — **`internal_extension_available`**.  
 - **`GET /api/v1/internal/work/dashboard/`** — то же + блок **`internal`** (оценка открытых задач, задел CRM), ответ помечен **`scope: internal_api`**.  
-- **Админка:** `/api/v1/admin/...`, роль `admin`.  
+- **Админка (REST):** префикс **`/api/v1/admin/...`**, **`IsAdminUser`** (staff). Пользователи **`GET/PATCH .../admin/users/`**; каталог прав **`.../permission-catalog/`**; группы учётных записей **`.../permission-groups/`** и **`.../permission-groups/<id>/`**; компании и отделы **`.../organizations/`**, **`.../departments/`**; модерация сообществ **`.../communities/`**, **`.../communities/<id>/`**, **`.../communities/<id>/posts/`**, **`DELETE .../communities/posts/<id>/`**. Django Admin — технический люк.  
 - Единый перечень **`Column.semantic`** — [ROLES-AND-TASKS.md](./ROLES-AND-TASKS.md) §7.1.

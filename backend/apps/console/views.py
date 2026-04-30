@@ -1,14 +1,18 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 from rest_framework import status
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.communities.models import Community, CommunityPost
 from apps.console.permissions_catalog import PERMISSION_CATALOG
 
 from .models import AdminAuditLog, Department, Organization, UserPermissionGroup
 from .serializers import (
     AdminAuditLogSerializer,
+    AdminCommunityPostSerializer,
+    AdminCommunitySerializer,
     AdminUserSerializer,
     DepartmentSerializer,
     OrganizationSerializer,
@@ -190,3 +194,72 @@ class AdminDepartmentsView(APIView):
             payload={"department_id": dep.id},
         )
         return Response(DepartmentSerializer(dep).data, status=status.HTTP_201_CREATED)
+
+
+class AdminCommunitiesListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        qs = (
+            Community.objects.annotate(
+                members_count=Count("memberships", distinct=True),
+                posts_count=Count("posts", distinct=True),
+            )
+            .order_by("-created_at")[:500]
+        )
+        return Response(AdminCommunitySerializer(qs, many=True).data)
+
+
+class AdminCommunityDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, pk: int):
+        community = Community.objects.filter(pk=pk).first()
+        if community is None:
+            return Response({"detail": "Не найдено."}, status=status.HTTP_404_NOT_FOUND)
+        ser = AdminCommunitySerializer(community, data=request.data, partial=True)
+        ser.is_valid(raise_exception=True)
+        ser.save()
+        qs = Community.objects.annotate(
+            members_count=Count("memberships", distinct=True),
+            posts_count=Count("posts", distinct=True),
+        ).get(pk=community.pk)
+        AdminAuditLog.objects.create(
+            actor=request.user,
+            action="update_community",
+            target_user=None,
+            payload={"community_id": community.id},
+        )
+        return Response(AdminCommunitySerializer(qs).data)
+
+
+class AdminCommunityPostsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, pk: int):
+        if not Community.objects.filter(pk=pk).exists():
+            return Response({"detail": "Не найдено."}, status=status.HTTP_404_NOT_FOUND)
+        posts = (
+            CommunityPost.objects.filter(community_id=pk)
+            .select_related("author", "community")
+            .order_by("-created_at")[:200]
+        )
+        return Response(AdminCommunityPostSerializer(posts, many=True).data)
+
+
+class AdminCommunityPostDeleteView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def delete(self, request, pk: int):
+        post = CommunityPost.objects.filter(pk=pk).select_related("community").first()
+        if post is None:
+            return Response({"detail": "Не найдено."}, status=status.HTTP_404_NOT_FOUND)
+        cid = post.community_id
+        post.delete()
+        AdminAuditLog.objects.create(
+            actor=request.user,
+            action="delete_community_post",
+            target_user=None,
+            payload={"community_id": cid, "post_id": pk},
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
