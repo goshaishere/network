@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.permissions import RequiresPermissionSlug
+
 from .feed import build_feed_page
 from .models import FriendRequest
 from .serializers import (
@@ -18,7 +20,8 @@ User = get_user_model()
 
 
 class FeedView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"GET": "social.read"}
 
     def get(self, request):
         try:
@@ -30,7 +33,8 @@ class FeedView(APIView):
 
 
 class FriendsListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"GET": "social.read"}
 
     def get(self, request):
         u = request.user
@@ -52,7 +56,8 @@ class FriendsListView(APIView):
 
 
 class FriendRequestCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"POST": "social.write"}
 
     def post(self, request):
         ser = FriendRequestCreateSerializer(data=request.data)
@@ -82,7 +87,8 @@ class FriendRequestCreateView(APIView):
 
 
 class FriendRequestIncomingView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"GET": "social.read"}
 
     def get(self, request):
         qs = FriendRequest.objects.filter(
@@ -93,7 +99,8 @@ class FriendRequestIncomingView(APIView):
 
 
 class FriendRequestAcceptView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"POST": "social.write"}
 
     def post(self, request, pk: int):
         fr = FriendRequest.objects.filter(pk=pk, to_user=request.user).first()
@@ -107,7 +114,8 @@ class FriendRequestAcceptView(APIView):
 
 
 class FriendRequestRejectView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"POST": "social.write"}
 
     def post(self, request, pk: int):
         fr = FriendRequest.objects.filter(pk=pk, to_user=request.user).first()
@@ -121,5 +129,6 @@ class FriendRequestRejectView(APIView):
 
 
 class ContentReportCreateView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"POST": "moderation.report.write"}
     serializer_class = ContentReportCreateSerializer

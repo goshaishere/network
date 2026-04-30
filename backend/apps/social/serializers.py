@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from apps.communities.models import CommunityPost
+from apps.notifications.models import Notification
 from apps.walls.models import WallPost
 
 from .models import ContentReport, FriendRequest
@@ -57,4 +58,18 @@ class ContentReportCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data["reporter"] = self.context["request"].user
-        return super().create(validated_data)
+        report = super().create(validated_data)
+        staff_ids = list(User.objects.filter(is_staff=True).values_list("id", flat=True)[:20])
+        Notification.objects.bulk_create(
+            [
+                Notification(
+                    user_id=uid,
+                    kind="moderation.report_created",
+                    title="New content report",
+                    body=f"Report #{report.id} requires triage",
+                    payload={"report_id": report.id},
+                )
+                for uid in staff_ids
+            ]
+        )
+        return report

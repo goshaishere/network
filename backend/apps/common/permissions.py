@@ -1,6 +1,8 @@
 from django.conf import settings
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
+from apps.console.services.permissions import get_effective_permission_slugs
+
 
 class IsOwnerOrReadOnly(BasePermission):
     """Запись только владельцу объекта (obj.user или obj.author)."""
@@ -74,3 +76,30 @@ class IsInternalEmployeeOrStaff(BasePermission):
         if not getattr(u, "is_employee", False):
             return False
         return getattr(u, "employment_kind", "") == "internal"
+
+
+class RequiresPermissionSlug(BasePermission):
+    """
+    Проверка доступа по permission slug.
+
+    View может указать:
+    - required_permission_slug = "domain.action"
+    - required_permission_slug_map = {"GET": "...", "POST": "..."}
+    """
+
+    message = "Недостаточно прав для выполнения действия."
+
+    def _resolve_required_slug(self, request, view) -> str | None:
+        mapping = getattr(view, "required_permission_slug_map", None) or {}
+        if request.method in mapping:
+            return mapping[request.method]
+        return getattr(view, "required_permission_slug", None)
+
+    def has_permission(self, request, view):
+        required_slug = self._resolve_required_slug(request, view)
+        if not required_slug:
+            return True
+        user = getattr(request, "user", None)
+        if not user or not user.is_authenticated:
+            return False
+        return required_slug in get_effective_permission_slugs(user)

@@ -87,6 +87,7 @@ const mainLinks = computed(() => {
     links.push({ to: "/feed", icon: "dynamic_feed", labelKey: "nav.feed", exact: false });
     links.push({ to: "/me", icon: "person", labelKey: "nav.myPage", exact: false });
     links.push({ to: "/friends", icon: "people", labelKey: "nav.friends", exact: false });
+    links.push({ to: "/notifications", icon: "notifications", labelKey: "nav.notifications", exact: false });
     links.push({ to: "/messages", icon: "chat", labelKey: "nav.messages", exact: false });
     links.push({ to: "/communities/mine", icon: "group_work", labelKey: "nav.myCommunities", exact: false });
   }

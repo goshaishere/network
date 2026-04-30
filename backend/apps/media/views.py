@@ -1,11 +1,14 @@
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 
+from apps.common.permissions import RequiresPermissionSlug
+
 from .serializers import UploadedFileSerializer
 
 
 class MediaUploadView(generics.CreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"POST": "media.upload"}
     serializer_class = UploadedFileSerializer
 
     def perform_create(self, serializer):

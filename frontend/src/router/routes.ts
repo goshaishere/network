@@ -84,6 +84,12 @@ const mainChildren: RouteRecordRaw[] = [
     meta: { titleKey: "friends.title", requiresAuth: true },
   },
   {
+    path: "notifications",
+    name: "notifications",
+    component: () => import("@/pages/NotificationsPage.vue"),
+    meta: { titleKey: "nav.notifications", requiresAuth: true },
+  },
+  {
     path: "console",
     name: "console",
     component: () => import("@/pages/AdminConsolePage.vue"),

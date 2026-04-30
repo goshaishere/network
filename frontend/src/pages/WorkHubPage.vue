@@ -68,6 +68,36 @@
               <q-item-section side>{{ b.preset }}</q-item-section>
             </q-item>
           </q-list>
+          <div v-if="selectedBoardId" class="row q-col-gutter-sm q-mb-sm">
+            <q-input v-model="taskFilters.q" dense outlined class="col-12 col-md-3" label="Search" />
+            <q-input v-model="taskFilters.assignee" dense outlined class="col-12 col-md-2" label="Assignee ID" />
+            <q-select
+              v-model="taskFilters.semantic"
+              dense
+              outlined
+              class="col-12 col-md-2"
+              :options="semanticOptions"
+              emit-value
+              map-options
+              clearable
+              label="Semantic"
+            />
+            <q-input v-model="taskFilters.due_date_from" dense outlined type="date" class="col-6 col-md-2" label="Due from" />
+            <q-input v-model="taskFilters.due_date_to" dense outlined type="date" class="col-6 col-md-2" label="Due to" />
+            <q-select
+              v-model="taskFilters.ordering"
+              dense
+              outlined
+              class="col-12 col-md-2"
+              :options="orderingOptions"
+              emit-value
+              map-options
+              label="Sort"
+            />
+            <div class="col-12 col-md-1 row items-center">
+              <q-toggle v-model="taskFilters.overdue" label="!" />
+            </div>
+          </div>
 
           <div v-if="selectedBoardId && columnsSorted.length" class="kanban-scroll">
             <draggable
@@ -129,6 +159,7 @@ import draggable from "vuedraggable";
 import { useQuasar } from "quasar";
 import { useI18n } from "vue-i18n";
 import { api } from "@/api/client";
+import { useWorkSocket } from "@/composables/useWorkSocket";
 import { useAuthStore } from "@/stores/auth";
 import type { WorkBoard, WorkColumn, WorkGroup, WorkTask } from "@/types/work";
 
@@ -160,6 +191,27 @@ const tasks = ref<WorkTask[]>([]);
 const taskLists = ref<Record<number, WorkTask[]>>({});
 const selectedGroupId = ref<number | null>(null);
 const selectedBoardId = ref<number | null>(null);
+const workSocket = useWorkSocket();
+const taskFilters = ref({
+  assignee: "",
+  semantic: "",
+  due_date_from: "",
+  due_date_to: "",
+  overdue: false,
+  q: "",
+  ordering: "position",
+});
+const semanticOptions = [
+  { label: "planned", value: "planned" },
+  { label: "in_progress", value: "in_progress" },
+  { label: "review", value: "review" },
+  { label: "done", value: "done" },
+];
+const orderingOptions = [
+  { label: "position", value: "position" },
+  { label: "due_date", value: "due_date" },
+  { label: "-due_date", value: "-due_date" },
+];
 
 function rebuildTaskLists() {
   const m: Record<number, WorkTask[]> = {};
@@ -187,6 +239,15 @@ watch(
 watch(
   () => tasks.value,
   () => rebuildTaskLists(),
+  { deep: true }
+);
+
+watch(
+  () => ({ ...taskFilters.value }),
+  () => {
+    if (!selectedBoardId.value) return;
+    void loadBoardData();
+  },
   { deep: true }
 );
 
@@ -225,9 +286,17 @@ async function loadBoardData() {
     tasks.value = [];
     return;
   }
+  const taskParams: Record<string, unknown> = { board: selectedBoardId.value };
+  if (taskFilters.value.assignee) taskParams.assignee = taskFilters.value.assignee;
+  if (taskFilters.value.semantic) taskParams.semantic = taskFilters.value.semantic;
+  if (taskFilters.value.due_date_from) taskParams.due_date_from = taskFilters.value.due_date_from;
+  if (taskFilters.value.due_date_to) taskParams.due_date_to = taskFilters.value.due_date_to;
+  if (taskFilters.value.overdue) taskParams.overdue = 1;
+  if (taskFilters.value.q) taskParams.q = taskFilters.value.q;
+  if (taskFilters.value.ordering) taskParams.ordering = taskFilters.value.ordering;
   const [columnsResp, tasksResp] = await Promise.all([
     api.get<WorkColumn[]>("/tasks/columns/", { params: { board: selectedBoardId.value } }),
-    api.get<WorkTask[]>("/tasks/", { params: { board: selectedBoardId.value } }),
+    api.get<WorkTask[]>("/tasks/", { params: taskParams }),
   ]);
   columns.value = columnsResp.data;
   tasks.value = tasksResp.data;
@@ -258,6 +327,7 @@ async function selectGroup(groupId: number) {
 async function selectBoard(boardId: number) {
   selectedBoardId.value = boardId;
   await loadBoardData();
+  workSocket.subscribe(boardId);
 }
 
 async function createGroup() {
@@ -368,8 +438,16 @@ watch(
 );
 
 onMounted(async () => {
+  workSocket.connect(async (event) => {
+    const eventType = typeof event.type === "string" ? event.type : "";
+    if (!eventType.startsWith("task.") && !eventType.startsWith("column.")) {
+      return;
+    }
+    await loadBoardData();
+  });
   await refreshAll();
   await loadInternalSummary();
+  if (selectedBoardId.value) workSocket.subscribe(selectedBoardId.value);
 });
 </script>
 

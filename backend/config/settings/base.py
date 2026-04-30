@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     "apps.work.apps.WorkConfig",
     "apps.console.apps.ConsoleConfig",
     "apps.social.apps.SocialConfig",
+    "apps.moderation.apps.ModerationConfig",
+    "apps.notifications.apps.NotificationsConfig",
     "apps.common.apps.CommonConfig",
 ]
 

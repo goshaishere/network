@@ -6,6 +6,7 @@
       <q-tab name="groups" :label="$t('console.tabGroups')" />
       <q-tab name="orgs" :label="$t('console.tabOrgs')" />
       <q-tab name="communities" :label="$t('console.tabCommunities')" />
+      <q-tab name="reports" label="Reports" />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated>
@@ -186,6 +187,16 @@
           </template>
         </q-table>
       </q-tab-panel>
+      <q-tab-panel name="reports" class="q-pa-none">
+        <q-linear-progress v-if="loadingReports" indeterminate color="primary" class="q-mb-md" />
+        <q-table v-else :rows="reports" :columns="reportColumns" row-key="id" flat bordered>
+          <template #body-cell-actions="props">
+            <q-td :props="props">
+              <q-btn dense flat color="primary" @click="resolveReport(props.row.id)">Resolve</q-btn>
+            </q-td>
+          </template>
+        </q-table>
+      </q-tab-panel>
     </q-tab-panels>
 
     <q-dialog v-model="editGroupOpen">
@@ -308,12 +319,13 @@ interface CommunityPostRow {
 
 const { t } = useI18n();
 const $q = useQuasar();
-const tab = ref<"users" | "groups" | "orgs" | "communities">("users");
+const tab = ref<"users" | "groups" | "orgs" | "communities" | "reports">("users");
 const loadingUsers = ref(true);
 const loadingGroups = ref(false);
 const loadingOrgs = ref(false);
 const loadingCommunities = ref(false);
 const loadingPosts = ref(false);
+const loadingReports = ref(false);
 const errorMsg = ref("");
 const groupsError = ref("");
 const orgsError = ref("");
@@ -342,6 +354,7 @@ const savingGroup = ref(false);
 const postsDialogOpen = ref(false);
 const postsCommunityId = ref<number | null>(null);
 const communityPosts = ref<CommunityPostRow[]>([]);
+const reports = ref<Array<{ id: number; target_type: string; status: string; reason: string }>>([]);
 
 const employmentKinds = [
   { label: "-", value: "" },
@@ -380,6 +393,13 @@ const communityColumns = computed(() => [
   { name: "is_open", label: t("console.isOpen"), field: "is_open", align: "left" as const },
   { name: "actions", label: "", field: "actions", align: "right" as const },
 ]);
+const reportColumns = [
+  { name: "id", label: "ID", field: "id", align: "left" as const },
+  { name: "target_type", label: "Target", field: "target_type", align: "left" as const },
+  { name: "status", label: "Status", field: "status", align: "left" as const },
+  { name: "reason", label: "Reason", field: "reason", align: "left" as const },
+  { name: "actions", label: "", field: "actions", align: "right" as const },
+];
 
 const orgSelectOptions = computed(() =>
   organizations.value.map((o) => ({ label: o.name, value: o.id }))
@@ -620,10 +640,28 @@ async function deletePost(postId: number) {
   }
 }
 
+async function loadReportsPanel() {
+  loadingReports.value = true;
+  try {
+    const { data } = await api.get<Array<{ id: number; target_type: string; status: string; reason: string }>>(
+      "/admin/moderation/reports/"
+    );
+    reports.value = data;
+  } finally {
+    loadingReports.value = false;
+  }
+}
+
+async function resolveReport(id: number) {
+  await api.patch(`/admin/moderation/reports/${id}/`, { status: "resolved", decision: "accepted" });
+  await loadReportsPanel();
+}
+
 watch(tab, (v) => {
   if (v === "groups") void loadGroupsPanel();
   if (v === "orgs") void loadOrgsPanel();
   if (v === "communities") void loadCommunitiesPanel();
+  if (v === "reports") void loadReportsPanel();
 });
 
 onMounted(async () => {

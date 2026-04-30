@@ -4,6 +4,8 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.permissions import RequiresPermissionSlug
+
 from .models import Profile
 from .serializers import (
     DashboardLayoutSerializer,
@@ -16,7 +18,8 @@ User = get_user_model()
 
 
 class ProfileMeView(generics.RetrieveUpdateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"GET": "profiles.self.read", "PATCH": "profiles.self.write"}
     http_method_names = ["get", "patch", "head", "options"]
 
     def get_serializer_class(self):
@@ -37,7 +40,8 @@ class ProfileMeView(generics.RetrieveUpdateAPIView):
 
 
 class DashboardLayoutView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"GET": "profiles.self.read", "PATCH": "profiles.self.write"}
 
     def get(self, request):
         profile, _ = Profile.objects.get_or_create(user=request.user)
@@ -53,6 +57,8 @@ class DashboardLayoutView(APIView):
 
 
 class ProfileDetailView(generics.RetrieveAPIView):
+    permission_classes = [RequiresPermissionSlug]
+    required_permission_slug_map = {"GET": "profiles.read"}
     serializer_class = ProfilePublicSerializer
     lookup_field = "user_id"
     lookup_url_kwarg = "user_id"

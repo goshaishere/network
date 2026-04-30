@@ -15,6 +15,8 @@ urlpatterns = [
     path("api/v1/", include("apps.work.urls")),
     path("api/v1/", include("apps.console.urls")),
     path("api/v1/", include("apps.social.urls")),
+    path("api/v1/", include("apps.moderation.urls")),
+    path("api/v1/", include("apps.notifications.urls")),
 ]
 
 if settings.DEBUG:

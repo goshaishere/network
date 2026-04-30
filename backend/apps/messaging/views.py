@@ -6,6 +6,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
 from apps.common.pagination import IdCursorPagination
+from apps.common.permissions import RequiresPermissionSlug
 
 from .models import Conversation, Message
 from .serializers import (
@@ -28,7 +29,8 @@ def _find_direct(u1, u2):
 
 
 class ConversationListCreateView(generics.ListAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"GET": "messaging.read", "POST": "messaging.write"}
     serializer_class = ConversationListSerializer
 
     def get_queryset(self):
@@ -60,7 +62,8 @@ class ConversationListCreateView(generics.ListAPIView):
 
 
 class MessageListCreateView(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, RequiresPermissionSlug]
+    required_permission_slug_map = {"GET": "messaging.read", "POST": "messaging.write"}
     serializer_class = MessageSerializer
     pagination_class = IdCursorPagination
 

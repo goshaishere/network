@@ -35,6 +35,12 @@ class ContentReport(models.Model):
         WALL_POST = "wall_post", "Пост на стене"
         COMMUNITY_POST = "community_post", "Пост в сообществе"
 
+    class Status(models.TextChoices):
+        NEW = "new", "Новая"
+        IN_REVIEW = "in_review", "В работе"
+        RESOLVED = "resolved", "Решена"
+        REJECTED = "rejected", "Отклонена"
+
     reporter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -43,6 +49,24 @@ class ContentReport(models.Model):
     target_type = models.CharField(max_length=32, choices=TargetType.choices)
     target_id = models.PositiveIntegerField()
     reason = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="content_reports_assigned",
+    )
+    decision = models.CharField(max_length=64, blank=True, default="")
+    resolution_note = models.TextField(blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="content_reports_resolved",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
